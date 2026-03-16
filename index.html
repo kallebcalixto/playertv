@@ -5,17 +5,135 @@
 <title>Player Programado — KBS TV</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
-  :root { color-scheme: dark; }
+  :root { 
+    color-scheme: dark; 
+    --primary-color: #2e7d32; 
+    --error-color: #ff4d4d;
+    --gold: #ffd700;
+  }
   body {
     background:#111;
     color:#eee;
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Arial, sans-serif;
     margin:0;
     overflow-y: scroll;
     min-height: 101vh;
   }
 
-  /* --- ESTILOS DO LOGIN (MANTIDOS) --- */
+  /* --- TELA DE PAGAMENTO/BLOQUEIO ROBUSTA E CHAMATIVA --- */
+  #tela-pagamento {
+    position: fixed; 
+    top: 0; left: 0; 
+    width: 100%; height: 100%; 
+    background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
+    display: none; 
+    justify-content: center; 
+    align-items: center; 
+    z-index: 100000;
+    backdrop-filter: blur(10px);
+  }
+
+  .painel-premium {
+    background: #161616;
+    padding: 40px;
+    border-radius: 24px;
+    border: 1px solid #333;
+    width: 100%;
+    max-width: 450px;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.8);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .painel-premium::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 4px;
+    background: linear-gradient(90deg, transparent, var(--error-color), transparent);
+  }
+
+  .status-badge {
+    background: var(--error-color);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    display: inline-block;
+    margin-bottom: 20px;
+  }
+
+  .painel-premium h2 {
+    font-size: 32px;
+    margin: 10px 0;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: -1px;
+  }
+
+  .painel-premium p {
+    color: #aaa;
+    margin-bottom: 30px;
+    font-size: 15px;
+  }
+
+  /* BOTOES DE PLANO ROBUSTOS */
+  .btn-plano-premium {
+    width: 100%;
+    padding: 20px;
+    margin: 12px 0;
+    background: linear-gradient(145deg, #1e1e1e, #141414);
+    border: 1px solid #333;
+    color: #fff;
+    border-radius: 16px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-plano-premium:hover {
+    border-color: var(--primary-color);
+    transform: translateY(-2px);
+    background: #1f1f1f;
+    box-shadow: 0 5px 15px rgba(46, 125, 50, 0.2);
+  }
+
+  .btn-plano-premium .nome {
+    font-weight: bold;
+    font-size: 16px;
+    text-transform: uppercase;
+  }
+
+  .btn-plano-premium .preco {
+    color: var(--primary-color);
+    font-weight: 900;
+    font-size: 18px;
+  }
+
+  .btn-plano-premium.destaque {
+    border-color: var(--gold);
+  }
+  .btn-plano-premium.destaque .preco {
+    color: var(--gold);
+  }
+
+  #qrcode-container {
+    margin-top: 25px;
+    background: #000;
+    padding: 20px;
+    border-radius: 16px;
+    border: 1px solid #222;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+
+  /* --- ESTILOS ORIGINAIS (MANTIDOS) --- */
   #tela-login {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #111; display: flex; justify-content: center; align-items: center; z-index: 99999;
@@ -35,22 +153,12 @@
   }
   .card-login button:hover { background: #3e8d42; }
 
-  /* --- SEU CSS ORIGINAL (MANTIDO) --- */
   header { padding:16px 20px; background:#1b1b1b; border-top:1px solid #2a2a2a; }
   header h1 { margin:0 0 6px 0; font-size:18px; }
   #grade { white-space:pre-line; font-size:13px; color:#ddd; max-height:220px; overflow-y:auto; }
   .wrap { max-width:1200px; margin:0 auto; padding:20px; }
-  .top {
-    display:flex;
-    gap:20px;
-    align-items:flex-start;
-    flex-wrap:wrap;
-    justify-content:center;
-  }
-  #player, #ytplayer {
-    width:500px; height:280px;
-    background:#000; border:1px solid #333; border-radius:8px;
-  }
+  .top { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
+  #player, #ytplayer { width:500px; height:280px; background:#000; border:1px solid #333; border-radius:8px; }
   #player { object-fit: contain; display:block; }
   #ytplayer { display:none; }
   .controls { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
@@ -59,7 +167,6 @@
   .btn-pri { background:#2e7d32; } .btn-pri:hover{ background:#3e8d42; }
   .btn-sec { background:#1976d2; } .btn-sec:hover{ background:#2a82d8; }
   .btn-admin { background:#6200ee; font-weight: bold; } .btn-admin:hover { background:#7c4dff; }
-  
   .grid { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; max-height:320px; overflow-y:auto; }
   .bloco { position:relative; flex:0 0 260px; border:1px solid #2b2b2b; background:#171717; border-radius:10px; padding:12px; }
   .bloco h3 { margin:0 0 10px 0; font-size:15px; }
@@ -68,17 +175,12 @@
   .hint { font-size:12px; color:#aaa; }
   .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#2a2a2a; font-size:12px; margin-left:6px; }
   .running::before {
-    content:"Em execução";
-    position:absolute; top:0; left:0; right:0;
+    content:"Em execução"; position:absolute; top:0; left:0; right:0;
     background:#2e7d32; color:#fff; font-size:12px; text-align:center;
     padding:2px 0; border-radius:10px 10px 0 0;
   }
-  .mini-btn {
-    padding:4px 6px; margin:2px; border:none; border-radius:6px;
-    cursor:pointer; background:#444; color:#fff; font-size:12px;
-  }
+  .mini-btn { padding:4px 6px; margin:2px; border:none; border-radius:6px; cursor:pointer; background:#444; color:#fff; font-size:12px; }
   .mini-btn:hover { background:#666; }
-  .removed { opacity:0.6; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -125,24 +227,51 @@
       .catch(err => alert("Erro ao cadastrar: " + err.message));
   };
 
-  // FUNÇÃO DE LOGOUT
   window.fazerLogout = () => {
-    signOut(auth).then(() => {
-      location.reload();
-    }).catch(err => alert("Erro ao sair: " + err.message));
+    signOut(auth).then(() => { location.reload(); }).catch(err => alert("Erro ao sair: " + err.message));
   };
 
   onAuthStateChanged(auth, (user) => {
     if (user) {
       document.getElementById('tela-login').style.display = 'none';
-      document.getElementById('conteudo-player').style.display = 'block';
-      const blocosRef = ref(db, `usuarios/${user.uid}/player_m3u`);
-      iniciarLeituraFirebase(blocosRef);
+      onValue(ref(db, `usuarios/${user.uid}/config`), snap => {
+        const config = snap.val() || { expiracao: 0 };
+        const agora = Date.now();
+        if (config.expiracao < agora) {
+          document.getElementById('tela-pagamento').style.display = 'flex';
+          document.getElementById('conteudo-player').style.display = 'none';
+        } else {
+          document.getElementById('tela-pagamento').style.display = 'none';
+          document.getElementById('conteudo-player').style.display = 'block';
+          const blocosRef = ref(db, `usuarios/${user.uid}/player_m3u`);
+          iniciarLeituraFirebase(blocosRef);
+        }
+      });
     } else {
       document.getElementById('tela-login').style.display = 'flex';
       document.getElementById('conteudo-player').style.display = 'none';
     }
   });
+
+  window.gerarPix = async (valorPlano) => {
+    const container = document.getElementById('qrcode-container');
+    container.innerHTML = "<p>Gerando código PIX seguro...</p>";
+    try {
+      const res = await fetch("https://kbs-backend-k3d0.onrender.com/gerar-pix", {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: auth.currentUser.email, uid: auth.currentUser.uid, valor: valorPlano })
+      });
+      const data = await res.json();
+      if(data.qr_code_base64) {
+        container.innerHTML = `
+          <img src="data:image/png;base64,${data.qr_code_base64}" style="width:180px; background:white; padding:10px; border-radius:12px; box-shadow: 0 0 20px rgba(255,255,255,0.1);">
+          <div style="margin-top:10px; font-size:11px; color:#2e7d32; font-weight:bold;">CÓDIGO COPIA E COLA:</div>
+          <div style="font-size:10px; color:#888; word-break:break-all; background:#111; padding:8px; border:1px solid #333; width:100%; box-sizing:border-box;">${data.qr_code}</div>
+          <button onclick="navigator.clipboard.writeText('${data.qr_code}').then(()=>alert('Copiado!'))" style="margin-top:5px; background:#333; font-size:11px;">Copiar Código</button>
+        `;
+      }
+    } catch (e) { alert("Erro ao conectar com servidor."); container.innerHTML = ""; }
+  };
 
   window._firebase_db = db;
   window._firebase_ref = ref;
@@ -179,6 +308,34 @@
 </head>
 
 <body>
+  <div id="tela-pagamento">
+    <div class="painel-premium">
+      <div class="status-badge">Sinal Interrompido</div>
+      <h2>Acesso Expirado</h2>
+      <p>Sua licença KBS TV chegou ao fim. Selecione um plano abaixo para liberar o player agora mesmo:</p>
+      
+      <button class="btn-plano-premium" onclick="gerarPix(29.90)">
+        <span class="nome">Plano Mensal</span>
+        <span class="preco">R$ 29,90</span>
+      </button>
+
+      <button class="btn-plano-premium destaque" onclick="gerarPix(230.90)">
+        <span class="nome">Plano Semestral 🌟</span>
+        <span class="preco">R$ 230,90</span>
+      </button>
+
+      <button class="btn-plano-premium" onclick="gerarPix(349.90)">
+        <span class="nome">Plano Anual</span>
+        <span class="preco">R$ 349,90</span>
+      </button>
+
+      <div id="qrcode-container">
+        </div>
+      
+      <button onclick="fazerLogout()" style="background:none; border:none; color:#555; text-decoration:underline; cursor:pointer; margin-top:20px; font-size:13px;">Alternar conta de usuário</button>
+    </div>
+  </div>
+
   <div id="tela-login">
     <div class="card-login">
       <h2>KBS TV - ACESSO</h2>
@@ -236,7 +393,7 @@
   </div>
 
 <script>
-/* =================== TODO O SEU JS ORIGINAL INTACTO (MANTIDO) =================== */
+/* =================== TODO O SEU JS ORIGINAL INTACTO =================== */
 const video = document.getElementById('player');
 const ytplayer = document.getElementById('ytplayer');
 const gradeEl = document.getElementById('grade');
