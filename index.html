@@ -85,7 +85,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
-  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+  import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyBzzQg4fMWQm82aOu2xM2huVPvHeyitFxQ",
@@ -102,48 +102,40 @@
   const db = getDatabase(app);
   const auth = getAuth(app);
 
-  // Login Original
   window.fazerLogin = () => {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('pass').value;
     signInWithEmailAndPassword(auth, email, pass).catch(err => alert("Erro: " + err.message));
   };
 
-  // NOVA FUNÇÃO: Cadastro com criação automática de pasta individual
   window.fazerCadastro = () => {
     const email = document.getElementById('email').value;
     const pass = document.getElementById('pass').value;
-    
     if(!email || !pass) return alert("Preencha email e senha");
-
     createUserWithEmailAndPassword(auth, email, pass)
       .then((userCredential) => {
         const user = userCredential.user;
-        
-        // Cria automaticamente a estrutura: usuarios > [UID] > player_m3u
         const novaReferencia = ref(db, `usuarios/${user.uid}/player_m3u/0`);
-        
         set(novaReferencia, {
-          dia: "segunda",
-          inicio: "12:00",
-          fim: "13:00",
+          dia: "segunda", inicio: "12:00", fim: "13:00",
           m3u: "https://srv4.zcast.com.br/samircalixto/samircalixto/playlist.m3u8",
-          yt: "",
-          timestamp: Date.now()
-        }).then(() => {
-          alert("Cliente cadastrado e área individual criada com sucesso!");
-        });
+          yt: "", timestamp: Date.now()
+        }).then(() => alert("Cliente cadastrado!"));
       })
       .catch(err => alert("Erro ao cadastrar: " + err.message));
   };
 
-  // Monitor de Estado de Login - Agora carregando pasta do Cliente (UID)
+  // FUNÇÃO DE LOGOUT
+  window.fazerLogout = () => {
+    signOut(auth).then(() => {
+      location.reload();
+    }).catch(err => alert("Erro ao sair: " + err.message));
+  };
+
   onAuthStateChanged(auth, (user) => {
     if (user) {
       document.getElementById('tela-login').style.display = 'none';
       document.getElementById('conteudo-player').style.display = 'block';
-      
-      // Aponta para a pasta exclusiva deste usuário logado
       const blocosRef = ref(db, `usuarios/${user.uid}/player_m3u`);
       iniciarLeituraFirebase(blocosRef);
     } else {
@@ -157,7 +149,6 @@
   window._firebase_set = set;
   window._firebase_onValue = onValue;
 
-  // Lógica de leitura mantida, agora recebendo a referência dinâmica
   window.iniciarLeituraFirebase = function(referenciaDinamica) {
       window._firebase_onValue(referenciaDinamica, snap => {
           const dadosFirebase = snap.val() || {};
@@ -200,8 +191,9 @@
 
   <div id="conteudo-player" style="display:none;">
     <div class="wrap">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 15px;">
+      <div style="display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px;">
           <button class="btn-admin" onclick="window.open('admin.html', '_blank')">⚙️ ABRIR ADMIN</button>
+          <button onclick="fazerLogout()" style="background:#b71c1c; font-weight: bold;">🚪 SAIR</button>
       </div>
 
       <div class="top">
