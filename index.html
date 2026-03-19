@@ -543,8 +543,36 @@ function tocarAtual(){
   document.querySelectorAll('.bloco').forEach(el=>el.classList.remove('running'));
   clearTimeout(pauseTimer); detachTimers(); stopM3U(); stopYouTube();
   if (!anyPlayableBlocks()) return;
+  
   const b = blocos[idxBloco];
   if (!b || b.removido) { proximoBloco(); return; }
+
+  // --- NOVA TRAVA DE SEGURANÇA PARA HORÁRIO FIXO ---
+  if (b.horaInicio && b.horaFim) {
+    const agora = new Date();
+    const dias = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
+    const hoje = dias[agora.getDay()];
+    const horaLonga = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}:${String(agora.getSeconds()).padStart(2,'0')}`;
+    
+    const diaMatch = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
+    const dentroDoHorario = (horaLonga >= b.horaInicio && horaLonga < b.horaFim);
+
+    // Se tem hora marcada mas NÃO está no horário ou dia, pula para o próximo bloco
+    if (!diaMatch || !dentroDoHorario) {
+      console.log(`Bloco ${idxBloco + 1} fora do horário. Pulando...`);
+      // Evita loop infinito se nenhum bloco puder tocar
+      if (idxBloco + 1 < blocos.length) {
+          idxBloco++;
+          tocarAtual();
+      } else {
+          idxBloco = 0;
+          // Pequeno delay para não travar o navegador se todos estiverem fora do horário
+          setTimeout(() => tocarAtual(), 1000);
+      }
+      return;
+    }
+  }
+  // --- FIM DA TRAVA ---
 
   const card = document.getElementById(`bloco-${idxBloco}`);
   if (card) card.classList.add('running');
@@ -565,7 +593,6 @@ function tocarAtual(){
   video.play().catch(()=>{});
   attachHandlersFor(b);
 }
-
 function attachHandlersFor(b){
   detachTimers();
   if (b.tipo === 'timer' && (!b.horaInicio || !b.horaFim)) {
