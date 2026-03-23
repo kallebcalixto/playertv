@@ -393,7 +393,6 @@
   </div>
 
 <script>
-/* =================== TODO O SEU JS ORIGINAL INTACTO =================== */
 const video = document.getElementById('player');
 const ytplayer = document.getElementById('ytplayer');
 const gradeEl = document.getElementById('grade');
@@ -539,60 +538,81 @@ function verificarAgendados(){
   }
 }
 
-function tocarAtual(){
-  document.querySelectorAll('.bloco').forEach(el=>el.classList.remove('running'));
-  clearTimeout(pauseTimer); detachTimers(); stopM3U(); stopYouTube();
+function tocarAtual() {
+  document.querySelectorAll('.bloco').forEach(el => el.classList.remove('running'));
+  clearTimeout(pauseTimer);
+  detachTimers();
+  stopM3U();
+  stopYouTube();
+
   if (!anyPlayableBlocks()) return;
-  
+
   const b = blocos[idxBloco];
-  if (!b || b.removido) { proximoBloco(); return; }
+  if (!b || b.removido) {
+    proximoBloco();
+    return;
+  }
 
-  // --- NOVA TRAVA DE SEGURANÇA PARA HORÁRIO FIXO ---
-  if (b.horaInicio && b.horaFim) {
-    const agora = new Date();
-    const dias = ["domingo","segunda","terca","quarta","quinta","sexta","sabado"];
-    const hoje = dias[agora.getDay()];
-    const horaLonga = `${String(agora.getHours()).padStart(2,'0')}:${String(agora.getMinutes()).padStart(2,'0')}:${String(agora.getSeconds()).padStart(2,'0')}`;
-    
-    const diaMatch = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
-    const dentroDoHorario = (horaLonga >= b.horaInicio && horaLonga < b.horaFim);
+  // --- TRAVA DE SEGURANÇA REFORÇADA ---
+  const agora = new Date();
+  const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
+  const hoje = dias[agora.getDay()];
+  const horaLonga = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}:${String(agora.getSeconds()).padStart(2, '0')}`;
 
-    // Se tem hora marcada mas NÃO está no horário ou dia, pula para o próximo bloco
-    if (!diaMatch || !dentroDoHorario) {
-      console.log(`Bloco ${idxBloco + 1} fora do horário. Pulando...`);
-      // Evita loop infinito se nenhum bloco puder tocar
-      if (idxBloco + 1 < blocos.length) {
-          idxBloco++;
-          tocarAtual();
-      } else {
-          idxBloco = 0;
-          // Pequeno delay para não travar o navegador se todos estiverem fora do horário
-          setTimeout(() => tocarAtual(), 1000);
-      }
-      return;
-    }
+  const temHorario = (b.horaInicio && b.horaFim);
+  const diaMatch = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
+  const dentroDoHorario = (horaLonga >= b.horaInicio && horaLonga < b.horaFim);
+
+  // M3U SÓ TOCA COM HORA MARCADA
+  if (b.tipo === 'youtube' && !temHorario) {
+    pularParaProximo();
+    return;
+  }
+
+  if (temHorario && (!diaMatch || !dentroDoHorario)) {
+    pularParaProximo();
+    return;
   }
   // --- FIM DA TRAVA ---
 
   const card = document.getElementById(`bloco-${idxBloco}`);
   if (card) card.classList.add('running');
-  ytplayer.style.display='none'; video.style.display='block';
+  ytplayer.style.display = 'none';
+  video.style.display = 'block';
 
   if (b.tipo === 'pause') {
     video.pause();
-    pauseTimer = setTimeout(()=>proximoBloco(), b.tempo*1000);
+    pauseTimer = setTimeout(() => proximoBloco(), b.tempo * 1000);
     return;
   }
+
   if (b.tipo === 'youtube') {
-    if (b.ytlink) startYouTubeNow(b); else if (b.m3ulink) startM3UNow(b);
+    if (b.ytlink) startYouTubeNow(b);
+    else if (b.m3ulink) startM3UNow(b);
     return;
   }
-  if (b.arquivos.length === 0) { proximoBloco(); return; }
+
+  if (b.arquivos.length === 0) {
+    proximoBloco();
+    return;
+  }
+
   video.src = b.arquivos[b.arquivoAtual].url;
   video.currentTime = b.progresso[b.arquivoAtual] || 0;
-  video.play().catch(()=>{});
+  video.play().catch(() => {});
   attachHandlersFor(b);
 }
+
+function pularParaProximo() {
+  if (idxBloco + 1 < blocos.length) {
+    idxBloco++;
+    tocarAtual();
+  } else {
+    idxBloco = 0;
+    setTimeout(() => tocarAtual(), 1000);
+  }
+}
+
 function attachHandlersFor(b){
   detachTimers();
   if (b.tipo === 'timer' && (!b.horaInicio || !b.horaFim)) {
