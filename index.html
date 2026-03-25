@@ -440,8 +440,15 @@ function gerenciarBannerKBS() {
   const logoImg = document.getElementById('letreiro-logo-img');
   
   if (b && b.arquivos && b.arquivos[b.arquivoAtual]) {
-    let nomeLimpo = b.arquivos[b.arquivoAtual].file.name.replace(/\.[^/.]+$/, "").replace(/convertido/gi, "").replace(/^[\d.\s-]+/, "").trim();
-document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
+    // --- LÓGICA DE LIMPEZA PROFUNDA (ESTILO TOP GUN) ---
+    const nomeBruto = b.arquivos[b.arquivoAtual].file.name;
+    let nomeLimpo = nomeBruto.split(/DUBLADO|convertido|DVDRip|XviD|_00|1080p|720p/i)[0]
+                             .replace(/^[\s.]+/, "")
+                             .trim();
+    if(nomeLimpo.endsWith('.')) nomeLimpo = nomeLimpo.slice(0, -1);
+
+    document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
+    // --------------------------------------------------
     
     const urlLogo = document.getElementById('logoUrl').value;
     if (urlLogo) { logoImg.src = urlLogo; logoImg.style.display = 'block'; }
