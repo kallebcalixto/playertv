@@ -181,6 +181,19 @@
   }
   .mini-btn { padding:4px 6px; margin:2px; border:none; border-radius:6px; cursor:pointer; background:#444; color:#fff; font-size:12px; }
   .mini-btn:hover { background:#666; }
+
+  /* --- BANNER ARRASTÁVEL --- */
+  #letreiro-kbs-auto {
+    position: absolute; top: 20px; left: 20px; z-index: 999;
+    background: rgba(0,0,0,0.85); color: #ffd700; border-left: 5px solid #ffd700;
+    padding: 10px 20px; font-weight: bold; font-size: 14px;
+    display: none; align-items: center; gap: 10px; border-radius: 0 8px 8px 0;
+    text-shadow: 2px 2px 4px #000; 
+    cursor: move; /* MOUSE VIRA CRUZ DE MOVIMENTO */
+    user-select: none;
+  }
+  #letreiro-logo-img { height: 25px; width: auto; display: none; pointer-events: none; }
+  #letreiro-texto-arquivo { pointer-events: none; }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
@@ -316,7 +329,7 @@
       
       <button class="btn-plano-premium" onclick="gerarPix(29.90)">
         <span class="nome">Plano Mensal</span>
-        <span class="preco">R$ 29,90</span>
+        <span class="preco">R$ 00,10</span>
       </button>
 
       <button class="btn-plano-premium destaque" onclick="gerarPix(230.90)">
@@ -329,8 +342,7 @@
         <span class="preco">R$ 349,90</span>
       </button>
 
-      <div id="qrcode-container">
-        </div>
+      <div id="qrcode-container"></div>
       
       <button onclick="fazerLogout()" style="background:none; border:none; color:#555; text-decoration:underline; cursor:pointer; margin-top:20px; font-size:13px;">Alternar conta de usuário</button>
     </div>
@@ -354,7 +366,12 @@
       </div>
 
       <div class="top">
-        <div>
+        <div style="position: relative;">
+          <div id="letreiro-kbs-auto" onmousedown="startDrag(event)">
+            <img id="letreiro-logo-img" src="">
+            <span id="letreiro-texto-arquivo"></span>
+          </div>
+
           <video id="player" controls playsinline></video>
           <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
           <div class="controls">
@@ -381,6 +398,11 @@
           <button class="btn-sec" onclick="salvarProgramacao()">💾 Salvar</button>
           <button class="btn-sec" onclick="document.getElementById('fileInput').click()">📂 Carregar</button>
           <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
+
+          <div style="margin-top:15px; background:#222; padding:10px; border-radius:8px; border:1px solid #333;">
+            <label style="font-size:11px; display:block; margin-bottom:5px;">LINK DA LOGO (BANNER):</label>
+            <input type="text" id="logoUrl" placeholder="Link da imagem .png" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px;">
+          </div>
         </div>
       </div>
       <div id="blocos" class="grid"></div>
@@ -410,6 +432,25 @@ let sistemaIniciado = false;
 
 ytplayer.style.display = 'none';
 video.style.display = 'block';
+
+// --- LÓGICA DO BANNER AUTOMÁTICO ---
+function gerenciarBannerKBS() {
+  const b = blocos[idxBloco];
+  const banner = document.getElementById('letreiro-kbs-auto');
+  const logoImg = document.getElementById('letreiro-logo-img');
+  
+  if (b && b.arquivos && b.arquivos[b.arquivoAtual]) {
+    const nomeLimpo = b.arquivos[b.arquivoAtual].file.name.split('.')[0];
+    document.getElementById('letreiro-texto-arquivo').innerText = `EXIBINDO: ${nomeLimpo}`;
+    
+    const urlLogo = document.getElementById('logoUrl').value;
+    if (urlLogo) { logoImg.src = urlLogo; logoImg.style.display = 'block'; }
+
+    banner.style.display = 'flex';
+    setTimeout(() => { banner.style.display = 'none'; }, 20000); 
+  }
+}
+setInterval(gerenciarBannerKBS, 180000); // 3 minutos
 
 function fmt(s){ s=Math.max(0,Math.floor(s||0));
   const h=String(Math.floor(s/3600)).padStart(2,'0');
@@ -553,7 +594,6 @@ function tocarAtual() {
     return;
   }
 
-  // --- TRAVA DE SEGURANÇA REFORÇADA ---
   const agora = new Date();
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hoje = dias[agora.getDay()];
@@ -563,7 +603,6 @@ function tocarAtual() {
   const diaMatch = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
   const dentroDoHorario = (horaLonga >= b.horaInicio && horaLonga < b.horaFim);
 
-  // M3U SÓ TOCA COM HORA MARCADA
   if (b.tipo === 'youtube' && !temHorario) {
     pularParaProximo();
     return;
@@ -573,7 +612,6 @@ function tocarAtual() {
     pularParaProximo();
     return;
   }
-  // --- FIM DA TRAVA ---
 
   const card = document.getElementById(`bloco-${idxBloco}`);
   if (card) card.classList.add('running');
@@ -643,7 +681,7 @@ function definirHoraFim(i,v){ blocos[i].horaFim=v; atualizarGrade(); }
 function pularArquivo(i){ const b=blocos[i]; if(b.arquivos.length>0){ b.arquivoAtual=(b.arquivoAtual+1)%b.arquivos.length; if(idxBloco===i) tocarAtual(); } }
 function voltarArquivo(i){ const b=blocos[i]; if(b.arquivos.length>0){ b.arquivoAtual=(b.arquivoAtual-1+b.arquivos.length)%b.arquivos.length; if(idxBloco===i) tocarAtual(); } }
 function removerBloco(i){ blocos[i].removido=true; document.getElementById(`bloco-${i}`).remove(); proximoBloco(); }
-function iniciar(){ sistemaIniciado = true; idxBloco=0; tocarAtual(); }
+function iniciar(){ sistemaIniciado = true; idxBloco=0; tocarAtual(); gerenciarBannerKBS(); }
 function proximoBloco(){ idxBloco=(idxBloco+1)%blocos.length; tocarAtual(); }
 function pausar(){ video.pause(); }
 function retomar(){ video.play(); }
@@ -658,6 +696,34 @@ function salvarProgramacao(){ const blob=new Blob([JSON.stringify(blocos)],{type
 function carregarProgramacao(input){ const reader=new FileReader(); reader.onload=e=>{ blocos=JSON.parse(e.target.result); blocosEl.innerHTML=""; blocos.forEach((b,i)=>renderizarBloco(i,b)); atualizarGrade(); }; reader.readAsText(input.files[0]); }
 function blocoAnterior(){ idxBloco=(idxBloco-1+blocos.length)%blocos.length; tocarAtual(); }
 function atualizarGrade(){ gradeEl.textContent = blocos.filter(b=>!b.removido).map((b,i)=>`Bloco ${i+1}: ${b.tipo} ${b.horaInicio?'('+b.horaInicio+')':''}`).join('\n'); }
+
+// --- NOVA LÓGICA DE ARRASTAR O BANNER (DRAG AND DROP) ---
+let isDragging = false;
+let offsetX, offsetY;
+const bannerEl = document.getElementById('letreiro-kbs-auto');
+
+window.startDrag = function(e) {
+  isDragging = true;
+  offsetX = e.clientX - bannerEl.getBoundingClientRect().left;
+  offsetY = e.clientY - bannerEl.getBoundingClientRect().top;
+  document.addEventListener('mousemove', onDrag);
+  document.addEventListener('mouseup', stopDrag);
+};
+
+function onDrag(e) {
+  if (!isDragging) return;
+  const container = bannerEl.parentElement.getBoundingClientRect();
+  let x = e.clientX - container.left - offsetX;
+  let y = e.clientY - container.top - offsetY;
+  bannerEl.style.left = x + 'px';
+  bannerEl.style.top = y + 'px';
+}
+
+function stopDrag() {
+  isDragging = false;
+  document.removeEventListener('mousemove', onDrag);
+  document.removeEventListener('mouseup', stopDrag);
+}
 </script>
 </body>
 </html>
