@@ -440,8 +440,8 @@ function gerenciarBannerKBS() {
   const logoImg = document.getElementById('letreiro-logo-img');
   
   if (b && b.arquivos && b.arquivos[b.arquivoAtual]) {
-    const nomeLimpo = b.arquivos[b.arquivoAtual].file.name.split('.')[0];
-    document.getElementById('letreiro-texto-arquivo').innerText = `EXIBINDO: ${nomeLimpo}`;
+    let nomeLimpo = b.arquivos[b.arquivoAtual].file.name.replace(/\.[^/.]+$/, "").replace(/convertido/gi, "").replace(/^[\d.\s-]+/, "").trim();
+document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
     
     const urlLogo = document.getElementById('logoUrl').value;
     if (urlLogo) { logoImg.src = urlLogo; logoImg.style.display = 'block'; }
