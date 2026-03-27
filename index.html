@@ -182,14 +182,13 @@
   .mini-btn { padding:4px 6px; margin:2px; border:none; border-radius:6px; cursor:pointer; background:#444; color:#fff; font-size:12px; }
   .mini-btn:hover { background:#666; }
 
-  /* --- BANNER ARRASTÁVEL --- */
   #letreiro-kbs-auto {
     position: absolute; top: 20px; left: 20px; z-index: 999;
     background: transparent; color: #ffd700; border-left: 5px solid #ffd700;
     padding: 10px 20px; font-weight: bold; font-size: 14px;
     display: none; align-items: center; gap: 10px; border-radius: 0 8px 8px 0;
     text-shadow: 2px 2px 4px #000; 
-    cursor: move; /* MOUSE VIRA CRUZ DE MOVIMENTO */
+    cursor: move;
     user-select: none;
   }
   #letreiro-logo-img { height: 25px; width: auto; display: none; pointer-events: none; }
@@ -433,7 +432,6 @@ let sistemaIniciado = false;
 ytplayer.style.display = 'none';
 video.style.display = 'block';
 
-// --- LÓGICA DO BANNER AUTOMÁTICO ---
 function gerenciarBannerKBS() {
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
@@ -455,7 +453,7 @@ function gerenciarBannerKBS() {
     setTimeout(() => { banner.style.display = 'none'; }, 20000); 
   }
 }
-setInterval(gerenciarBannerKBS, 180000); // 3 minutos
+setInterval(gerenciarBannerKBS, 180000);
 
 function fmt(s){ s=Math.max(0,Math.floor(s||0));
   const h=String(Math.floor(s/3600)).padStart(2,'0');
@@ -479,7 +477,7 @@ function adicionarBloco(tipo){
     arquivoAtual: 0, limitePorCiclo: (tipo==='movie'?3:0),
     ytlink:'', m3ulink:'', diaSemana:'', horaInicio:'', horaFim:'',
     removido:false, _agendadoRodando:false,
-    diasSelecionados: [], horarios: [] // Inicializa arrays de agenda
+    diasSelecionados: [], horarios: []
   };
   const i = blocos.push(bloco)-1;
   renderizarBloco(i, bloco);
@@ -552,7 +550,6 @@ setInterval(()=>{ verificarAgendados(); }, 1000);
 
 function verificarAgendados() {
   if (blocos.length === 0) return;
-
   const agora = new Date();
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hoje = dias[agora.getDay()];
@@ -564,13 +561,11 @@ function verificarAgendados() {
   for (let i = 0; i < blocos.length; i++) {
     const b = blocos[i];
     if (!b || b.removido) continue;
-
     if (b.tipo === 'youtube') {
       const diaMatch = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
       const dentroDoHorario = (b.horaInicio && b.horaFim && horaAtual >= b.horaInicio && horaAtual < b.horaFim);
       if (diaMatch && dentroDoHorario) { blocoEncontrado = true; indiceParaRodar = i; break; }
     }
-
     if (b.tipo === 'timer' && b.horarios && b.horarios.length > 0) {
       const diaMatch = (!b.diasSelecionados || b.diasSelecionados.length === 0 || b.diasSelecionados.includes(hoje));
       const horarioMatch = b.horarios.some(h => horaAtual >= h.inicio && horaAtual < h.fim);
@@ -611,7 +606,6 @@ function verificarAgendados() {
   }
 }
 
-// --- FUNÇÃO TOCAR ATUAL CORRIGIDA (TRAVA DE SEGURANÇA) ---
 function tocarAtual() {
   document.querySelectorAll('.bloco').forEach(el => el.classList.remove('running'));
   clearTimeout(pauseTimer);
@@ -620,52 +614,26 @@ function tocarAtual() {
   stopYouTube();
 
   if (!anyPlayableBlocks()) return;
-
   const b = blocos[idxBloco];
-  if (!b || b.removido) {
-    pularParaProximo();
-    return;
-  }
+  if (!b || b.removido) { pularParaProximo(); return; }
 
   const agora = new Date();
   const dias = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"];
   const hoje = dias[agora.getDay()];
-  const horaAgora = agora.toTimeString().split(' ')[0]; // HH:MM:SS
+  const horaAgora = agora.toTimeString().split(' ')[0];
 
-  // --- TRAVA PARA BLOCO DE TEMPO FIXO (LOCAL) ---
   if (b.tipo === 'timer') {
-    const temDiasMarcados = b.diasSelecionados && b.diasSelecionados.length > 0;
-    const temHorasMarcadas = b.horarios && b.horarios.length > 0;
-
-    // SE NÃO TIVER DIA OU NÃO TIVER HORA MARCADA, PULA
-    if (!temDiasMarcados || !temHorasMarcadas) {
-      pularParaProximo();
-      return;
-    }
-
-    // Verifica se o momento atual bate com a agenda
-    const diaMatch = b.diasSelecionados.includes(hoje);
-    const horarioMatch = b.horarios.some(h => horaAgora >= h.inicio && horaAgora < h.fim);
-
-    if (!diaMatch || !horarioMatch) {
-      pularParaProximo();
-      return;
-    }
+    const diaMatch = b.diasSelecionados && b.diasSelecionados.includes(hoje);
+    const horarioMatch = b.horarios && b.horarios.some(h => horaAgora >= h.inicio && horaAgora < h.fim);
+    if (!diaMatch || !horarioMatch) { pularParaProximo(); return; }
   }
 
-  // --- TRAVA PARA YOUTUBE/M3U (ADMIN) ---
   if (b.tipo === 'youtube') {
-    const temAgendaAdmin = (b.horaInicio && b.horaFim);
     const diaMatchAdmin = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
     const dentroDoHorarioAdmin = (horaAgora >= b.horaInicio && horaAgora < b.horaFim);
-
-    if (!temAgendaAdmin || !diaMatchAdmin || !dentroDoHorarioAdmin) {
-      pularParaProximo();
-      return;
-    }
+    if (!diaMatchAdmin || !dentroDoHorarioAdmin) { pularParaProximo(); return; }
   }
 
-  // --- EXECUÇÃO DO PLAYER ---
   const card = document.getElementById(`bloco-${idxBloco}`);
   if (card) card.classList.add('running');
   ytplayer.style.display = 'none';
@@ -676,17 +644,12 @@ function tocarAtual() {
     pauseTimer = setTimeout(() => proximoBloco(), b.tempo * 1000);
     return;
   }
-
   if (b.tipo === 'youtube') {
     if (b.ytlink) startYouTubeNow(b);
     else if (b.m3ulink) startM3UNow(b);
     return;
   }
-
-  if (b.arquivos.length === 0) {
-    pularParaProximo();
-    return;
-  }
+  if (b.arquivos.length === 0) { pularParaProximo(); return; }
 
   video.src = b.arquivos[b.arquivoAtual].url;
   video.currentTime = b.progresso[b.arquivoAtual] || 0;
@@ -694,10 +657,7 @@ function tocarAtual() {
   attachHandlersFor(b);
 }
 
-function pularParaProximo() {
-  idxBloco = (idxBloco + 1) % blocos.length;
-  tocarAtual();
-}
+function pularParaProximo() { idxBloco = (idxBloco + 1) % blocos.length; tocarAtual(); }
 
 function attachHandlersFor(b){
   detachTimers();
@@ -732,8 +692,35 @@ function pausar(){ video.pause(); }
 function retomar(){ video.play(); }
 function startYouTubeNow(b){ ytplayer.style.display='block'; video.style.display='none'; const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); if(id) ytplayer.src=`https://www.youtube.com/embed/${id[1]}?autoplay=1`; }
 function stopYouTube(){ ytplayer.src=''; ytplayer.style.display='none'; }
-function startM3UNow(b){ video.style.display='block'; if(Hls.isSupported()){ hlsInstance=new Hls(); hlsInstance.loadSource(b.m3ulink); hlsInstance.attachMedia(video); hlsInstance.on(Hls.Events.MANIFEST_PARSED, ()=>video.play()); } }
-function stopM3U(){ if(hlsInstance){ hlsInstance.destroy(); hlsInstance=null; } video.pause(); }
+
+function startM3UNow(b) {
+    video.style.display = 'block';
+    if (Hls.isSupported()) {
+        if (hlsInstance) stopM3U();
+        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, manifestLoadingMaxRetry: 10, levelLoadingMaxRetry: 10 });
+        hlsInstance.loadSource(b.m3ulink);
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+        hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+            if (data.fatal) {
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR: hlsInstance.startLoad(); break;
+                    case Hls.ErrorTypes.MEDIA_ERROR: hlsInstance.recoverMediaError(); break;
+                    default: stopM3U(); proximoBloco(); break;
+                }
+            }
+        });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = b.m3ulink;
+        video.addEventListener('loadedmetadata', () => video.play());
+    }
+}
+
+function stopM3U() {
+    if (hlsInstance) { hlsInstance.detachMedia(); hlsInstance.destroy(); hlsInstance = null; }
+    video.pause(); video.removeAttribute('src'); video.load(); 
+}
+
 function detachTimers(){ if(timeupdateHandler) video.removeEventListener('timeupdate', timeupdateHandler); video.onended=null; }
 function proximoArquivoMesmoBloco(){ const b=blocos[idxBloco]; b.arquivoAtual=(b.arquivoAtual+1)%b.arquivos.length; tocarAtual(); }
 function resizePlayer(){ const w=document.getElementById('playerWidth').value, h=document.getElementById('playerHeight').value; video.style.width=w+'px'; video.style.height=h+'px'; ytplayer.style.width=w+'px'; ytplayer.style.height=h+'px'; }
@@ -742,7 +729,43 @@ function carregarProgramacao(input){ const reader=new FileReader(); reader.onloa
 function blocoAnterior(){ idxBloco=(idxBloco-1+blocos.length)%blocos.length; tocarAtual(); }
 function atualizarGrade(){ gradeEl.textContent = blocos.filter(b=>!b.removido).map((b,i)=>`Bloco ${i+1}: ${b.tipo} ${b.horaInicio?'('+b.horaInicio+')':''}`).join('\n'); }
 
-// --- DRAG AND DROP DO BANNER ---
+// --- FUNÇÕES DE AGENDA (CONSERTADAS) ---
+function toggleDia(i, dia) {
+    if (!blocos[i].diasSelecionados) blocos[i].diasSelecionados = [];
+    const idx = blocos[i].diasSelecionados.indexOf(dia);
+    if (idx === -1) blocos[i].diasSelecionados.push(dia);
+    else blocos[i].diasSelecionados.splice(idx, 1);
+}
+
+function addHora(i) {
+    if (!blocos[i].horarios) blocos[i].horarios = [];
+    blocos[i].horarios.push({ inicio: "00:00:00", fim: "00:00:00" });
+    const container = document.getElementById(`lista-horarios-${i}`);
+    const div = document.createElement('div');
+    const idx = blocos[i].horarios.length - 1;
+    div.style = "display:flex; gap:5px; margin-bottom:5px;";
+    div.innerHTML = `
+        <input type="time" step="1" value="00:00:00" oninput="editHora(${i}, ${idx}, 'inicio', this.value)" style="width:85px;">
+        <input type="time" step="1" value="00:00:00" oninput="editHora(${i}, ${idx}, 'fim', this.value)" style="width:85px;">
+        <button onclick="removeHora(${i}, ${idx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button>
+    `;
+    container.appendChild(div);
+}
+
+function editHora(i, idx, campo, valor) { blocos[i].horarios[idx][campo] = valor; }
+
+function removeHora(i, idx) {
+    blocos[i].horarios.splice(idx, 1);
+    const container = document.getElementById(`lista-horarios-${i}`);
+    container.innerHTML = blocos[i].horarios.map((h, subIdx) => `
+      <div style="display:flex; gap:5px; margin-bottom:5px;">
+        <input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${subIdx}, 'inicio', this.value)" style="width:85px;">
+        <input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${subIdx}, 'fim', this.value)" style="width:85px;">
+        <button onclick="removeHora(${i}, ${subIdx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button>
+      </div>
+    `).join('');
+}
+
 let isDragging = false;
 let offsetX, offsetY;
 const bannerEl = document.getElementById('letreiro-kbs-auto');
@@ -759,29 +782,10 @@ function onDrag(e) {
   const container = bannerEl.parentElement.getBoundingClientRect();
   let x = e.clientX - container.left - offsetX;
   let y = e.clientY - container.top - offsetY;
-  bannerEl.style.left = x + 'px'; bannerEl.style.top = y + 'px';
+  bannerEl.style.left = x + 'px';
+  bannerEl.style.top = y + 'px';
 }
-function stopDrag() { isDragging = false; document.removeEventListener('mousemove', onDrag); document.removeEventListener('mouseup', stopDrag); }
-
-// --- FUNÇÕES DE AGENDA LOCAL ---
-window.toggleDia = (i, d) => {
-  if(!blocos[i].diasSelecionados) blocos[i].diasSelecionados = [];
-  const idx = blocos[i].diasSelecionados.indexOf(d);
-  idx === -1 ? blocos[i].diasSelecionados.push(d) : blocos[i].diasSelecionados.splice(idx, 1);
-  atualizarGrade();
-};
-window.addHora = (i) => {
-  if(!blocos[i].horarios) blocos[i].horarios = [];
-  blocos[i].horarios.push({inicio: '12:00:00', fim: '13:00:00'});
-  blocosEl.innerHTML = ""; blocos.forEach((b,idx)=>renderizarBloco(idx,b));
-};
-window.removeHora = (i, idx) => {
-  blocos[i].horarios.splice(idx, 1);
-  blocosEl.innerHTML = ""; blocos.forEach((b,idx)=>renderizarBloco(idx,b));
-};
-window.editHora = (i, idx, campo, valor) => {
-  blocos[i].horarios[idx][campo] = valor;
-};
+function stopDrag() { isDragging = false; document.removeEventListener('mousemove', onDrag); }
 </script>
 </body>
 </html>
