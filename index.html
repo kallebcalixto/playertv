@@ -780,7 +780,7 @@ window.toggleStream = async function() {
             socket.onopen = () => {
                 mediaRecorder = new MediaRecorder(window._currentStream, { 
                     mimeType: 'video/webm; codecs=vp8,opus',
-                    videoBitsPerSecond: 450000 
+                    videoBitsPerSecond: 2400000 
                 });
 
                 mediaRecorder.ondataavailable = (e) => { 
