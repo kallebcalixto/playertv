@@ -226,8 +226,8 @@
     pointer-events: none;
     display: none;
   }
-</style>
 
+</style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
 <script type="module">
@@ -392,14 +392,6 @@
   </div>
 
   <div id="conteudo-player" style="display:none;">
-<div style="background: #111; border: 1px solid #333; padding: 8px 12px; border-radius: 6px; margin-bottom: 20px; display: inline-flex; align-items: center; gap: 10px;">
-    <span style="font-size: 12px; color: #777;">📦 Servidor KBS:</span>
-    <a href="https://firebasestorage.googleapis.com/v0/b/controle-remoto-da345.firebasestorage.app/o/INSTALADOR%2FINSTALADOR.zip?alt=media&token=f1dd5635-4916-4493-af90-24ad216cf4c8" target="_blank" style="text-decoration: none;">
-        <button type="button" style="background: #333; color: #fff; border: none; padding: 4px 10px; border-radius: 4px; font-size: 11px; cursor: pointer; font-weight: bold; transition: 0.2s;" onmouseover="this.style.background='#2e7d32'" onmouseout="this.style.background='#333'">
-            📥 BAIXAR AGORA
-        </button>
-    </a>
-</div>
     <div class="wrap">
       <div style="display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px;">
           <button class="btn-admin" onclick="window.open('admin.html', '_blank')">⚙️ ABRIR ADMIN</button>
@@ -490,6 +482,7 @@ let blocoAnteriorPaused = false;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
+// Função para atualizar as imagens dos banners conforme o link digitado
 function atualizarLogos(url) {
   const logo1 = document.getElementById('letreiro-logo-img');
   const logo2 = document.getElementById('img-banner-fixo');
@@ -708,6 +701,7 @@ function addHora(i) { if (!blocos[i].horarios) blocos[i].horarios = []; blocos[i
 function editHora(i, idx, campo, valor) { blocos[i].horarios[idx][campo] = valor; }
 function removeHora(i, idx) { blocos[i].horarios.splice(idx, 1); const container = document.getElementById(`lista-horarios-${i}`); container.innerHTML = blocos[i].horarios.map((h, subIdx) => `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${subIdx}, 'inicio', this.value)" style="width:85px;"><input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${subIdx}, 'fim', this.value)" style="width:85px;"><button onclick="removeHora(${i}, ${subIdx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button></div>`).join(''); }
 
+// Lógica de Arrastar (Drag)
 let isDragging = false; 
 let offsetX, offsetY; 
 let activeElement = null;
@@ -736,10 +730,9 @@ function stopDrag() {
     document.removeEventListener('mousemove', onDrag); 
 }
 
+// Lógica de Transmissão por REGIÃO DO PLAYER
 let mediaRecorder;
 let socket;
-
-let intervalReconexao; // Vigilante para manter a live ativa
 
 window.toggleStream = async function() {
     const btn = document.getElementById('btnStream');
@@ -747,116 +740,60 @@ window.toggleStream = async function() {
     const url = document.getElementById('bridgeUrl').value;
     const playerEl = document.getElementById('player');
 
-    if (mediaRecorder && mediaRecorder.state !== "inactive") {
-        pararTudo();
-        return;
-    }
-
-    async function conectar() {
+    if (!mediaRecorder || mediaRecorder.state === "inactive") {
         try {
-            // Se já tiver um stream ativo, não pede de novo, apenas reutiliza
-            if (!window._currentStream || !window._currentStream.active) {
-                window._currentStream = await navigator.mediaDevices.getDisplayMedia({
-                    video: { displaySurface: "browser", frameRate: 20 },
-                    audio: true,
-                    preferCurrentTab: true
-                });
-                
-                // Configuração de Crop se disponível
-                if (!!window.CropTarget) {
-                    try {
-                        const target = await CropTarget.fromElement(playerEl);
-                        const [videoTrack] = window._currentStream.getVideoTracks();
-                        if (videoTrack.cropTo) await videoTrack.cropTo(target);
-                    } catch (cE) { console.warn("Crop falhou:", cE); }
-                }
-
-                // Se o usuário fechar o compartilhamento manualmente
-                window._currentStream.getVideoTracks()[0].onended = () => pararTudo();
+            const stream = await navigator.mediaDevices.getDisplayMedia({
+                video: { displaySurface: "browser", frameRate: 20 },
+                audio: true,
+                preferCurrentTab: true
+            });
+            
+            if (!!window.CropTarget) {
+              const target = await CropTarget.fromElement(playerEl);
+              const [videoTrack] = stream.getVideoTracks();
+              await videoTrack.cropTo(target);
             }
-
+            
             socket = new WebSocket(url);
             
             socket.onopen = () => {
-                mediaRecorder = new MediaRecorder(window._currentStream, { 
+                mediaRecorder = new MediaRecorder(stream, { 
                     mimeType: 'video/webm; codecs=vp8,opus',
-                    videoBitsPerSecond: 60000000 
+                    videoBitsPerSecond: 450000 
                 });
-
                 mediaRecorder.ondataavailable = (e) => { 
-                    if (e.data.size > 0 && socket && socket.readyState === WebSocket.OPEN) {
+                    if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) {
                         socket.send(e.data); 
                     }
                 };
-
                 mediaRecorder.start(100); 
                 btn.innerText = "⏹ PARAR TRANSMISSÃO";
                 btn.style.background = "#2e7d32";
                 led.style.background = "#00ff00";
-
-                // INICIA O VIGILANTE: Se a conexão cair, ele tenta voltar a cada 5 segundos
-                if (!intervalReconexao) {
-                    intervalReconexao = setInterval(() => {
-                        if (socket && socket.readyState !== WebSocket.OPEN && mediaRecorder) {
-                            console.log("Detectada queda de sinal. Tentando reconectar...");
-                            conectar();
-                        }
-                    }, 5000);
-                }
             };
-
-            socket.onclose = () => {
-                // Se o socket fechar mas o botão ainda estiver verde, tenta reconectar
-                if (mediaRecorder && mediaRecorder.state !== "inactive") {
-                    setTimeout(conectar, 2000);
-                }
+            socket.onclose = () => resetStreamUI(btn, led);
+            socket.onerror = () => { alert("Erro de conexão."); resetStreamUI(btn, led); };
+            stream.getVideoTracks()[0].onended = () => {
+                if(mediaRecorder) mediaRecorder.stop();
+                if(socket) socket.close();
+                resetStreamUI(btn, led);
             };
-
-            socket.onerror = () => console.error("Erro no Bridge. Tentando reconectar...");
-
         } catch (err) { 
-            if(err.name !== "NotAllowedError") {
-                alert("Erro na conexão. Verifique o Bridge."); 
-            }
-            pararTudo();
+            console.error(err);
+            alert("Erro: Certifique-se de escolher 'Separador do Chrome' e a aba deste player."); 
         }
+    } else {
+        mediaRecorder.stop();
+        if(socket) socket.close();
+        resetStreamUI(btn, led);
     }
-
-    conectar();
 };
 
-function pararTudo() {
-    const btn = document.getElementById('btnStream');
-    const led = document.getElementById('statusLed');
-    
-    // Para o vigilante de reconexão
-    if (intervalReconexao) {
-        clearInterval(intervalReconexao);
-        intervalReconexao = null;
-    }
-
-    if (mediaRecorder && mediaRecorder.state !== "inactive") { 
-        try { mediaRecorder.stop(); } catch(e){} 
-    }
-    
-    // Desliga as faixas de vídeo e áudio
-    if (window._currentStream) {
-        window._currentStream.getTracks().forEach(track => track.stop());
-        window._currentStream = null;
-    }
-
-    if (socket) { 
-        if (socket.readyState === WebSocket.OPEN) socket.close(); 
-        socket = null; 
-    }
-    
-    mediaRecorder = null; 
-    resetStreamUI(btn, led);
-}
 function resetStreamUI(btn, led) { 
     btn.innerText = "🔴 INICIAR TRANSMISSÃO"; 
     btn.style.background = "#b71c1c"; 
     led.style.background = "#444"; 
-}</script>
+}
+</script>
 </body>
 </html>
