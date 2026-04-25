@@ -18,7 +18,38 @@
     margin:0;
     overflow-y: scroll;
     min-height: 101vh;
+    position: relative;
   }
+
+  /* --- NOVOS ESTILOS PARA MOVIMENTAÇÃO --- */
+  .movel {
+    position: absolute !important;
+    cursor: move;
+    z-index: 10;
+    transition: outline 0.2s;
+  }
+  .modo-edicao .movel {
+    outline: 2px dashed var(--primary-color);
+    background: rgba(46, 125, 50, 0.05);
+  }
+  #btn-trava-layout {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 999999;
+    padding: 15px 25px;
+    border-radius: 50px;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 2px solid #fff;
+    cursor: pointer;
+  }
+  .layout-destravado { background: #ff4d4d !important; color: #fff; }
+  .layout-travado { background: #2e7d32 !important; color: #fff; }
+  /* -------------------------------------- */
 
   #tela-pagamento {
     position: fixed; 
@@ -189,7 +220,6 @@
   .mini-btn { padding:4px 6px; margin:2px; border:none; border-radius:6px; cursor:pointer; background:#444; color:#fff; font-size:12px; }
   .mini-btn:hover { background:#666; }
 
-  /* BANNER 1 - NOME DO FILME */
   #letreiro-kbs-auto {
     position: absolute; top: 20px; left: 20px; z-index: 999;
     background: transparent; color: #ffd700; border-left: 5px solid #ffd700;
@@ -202,7 +232,6 @@
   #letreiro-logo-img { height: 25px; width: auto; display: none; pointer-events: none; }
   #letreiro-texto-arquivo { pointer-events: none; }
 
-  /* BANNER 2 - SOMENTE LOGO (REDIMENSIONÁVEL) */
   #banner-somente-logo {
     position: absolute; 
     top: 60px; 
@@ -327,26 +356,44 @@
   window.iniciarLeituraFirebase = function(referenciaDinamica) {
       window._firebase_onValue(referenciaDinamica, snap => {
           const dadosFirebase = snap.val() || {};
-          let novosBlocos = [];
-          const blocosAtuaisLocais = blocos.filter(b => b.tipo !== 'youtube');
-          novosBlocos.push(...blocosAtuaisLocais);
+          
+          // 1. Filtramos a lista atual para MANTER apenas o que NÃO é agendamento (filmes locais, pausas)
+          // Isso evita que blocos de "Filmes" se multipliquem ao atualizar o Admin
+          let blocosManter = blocos.filter(b => b.tipo !== 'youtube' && !b._firebaseIndex);
+
+          let novosBlocosAgendados = [];
 
           Object.keys(dadosFirebase).forEach(i => {
               const d = dadosFirebase[i];
-              novosBlocos.push({
-                  tipo: 'youtube', arquivos: [], progresso: [],
-                  tempo: 0, sessaoRestante: 0, pauseRestante: 0,
-                  arquivoAtual: 0, limitePorCiclo: 0,
-                  ytlink: d.yt || '', m3ulink: d.m3u || '', 
-                  diaSemana: d.dia || '', horaInicio: d.inicio || '', horaFim: d.fim || '',
-                  removido: false, _agendadoRodando: false, _firebaseIndex: parseInt(i)
+              novosBlocosAgendados.push({
+                  tipo: 'youtube', 
+                  arquivos: [], 
+                  progresso: [],
+                  tempo: 0, 
+                  sessaoRestante: 0, 
+                  pauseRestante: 0,
+                  arquivoAtual: 0, 
+                  limitePorCiclo: 0,
+                  ytlink: d.yt || '', 
+                  m3ulink: d.m3u || '', 
+                  diaSemana: d.dia || '', 
+                  horaInicio: d.inicio || '', 
+                  horaFim: d.fim || '',
+                  removido: false, 
+                  _agendadoRodando: false, 
+                  _firebaseIndex: i // Marca que este bloco vem do Firebase
               });
           });
 
-          blocos = novosBlocos;
+          // 2. Unimos os blocos que você já tinha com os novos agendamentos atualizados
+          blocos = [...blocosManter, ...novosBlocosAgendados];
+          
+          // 3. Atualizamos a tela
           blocosEl.innerHTML = '';
           blocos.forEach((b, i) => renderizarBloco(i, b));
           atualizarGrade();
+          
+          // Mantém o índice dentro do limite caso a lista diminua
           if (idxBloco >= blocos.length) idxBloco = 0;
       });
   };
@@ -393,13 +440,14 @@
 
   <div id="conteudo-player" style="display:none;">
     <div class="wrap">
-      <div style="display: flex; justify-content: flex-end; margin-bottom: 15px; gap: 10px;">
+      
+      <div class="movel" style="top: 20px; right: 20px; display: flex; gap: 10px;">
           <button class="btn-admin" onclick="window.open('admin.html', '_blank')">⚙️ ABRIR ADMIN</button>
           <button onclick="fazerLogout()" style="background:#b71c1c; font-weight: bold;">🚪 SAIR</button>
       </div>
 
       <div class="top">
-        <div style="position: relative;">
+        <div class="movel" style="left: 20px; top: 100px;">
           
           <div id="letreiro-kbs-auto" onmousedown="startDrag(event)">
             <img id="letreiro-logo-img" src="">
@@ -428,8 +476,10 @@
             <input type="number" id="playerHeight" value="280" style="width:70px;">
             <button onclick="resizePlayer()">Redimensionar</button>
           </div>
+        </div>
 
-          <div style="margin-top:15px; background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333;">
+        <div class="movel" style="left: 550px; top: 100px;">
+          <div style="background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333; width: 300px;">
               <label style="font-size:11px; color:#2e7d32; font-weight:bold;">URL DO BRIDGE (NODE.JS):</label>
               <input type="text" id="bridgeUrl" value="ws://localhost:8080" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:8px; margin:5px 0; border-radius:5px;">
               <div style="display:flex; gap:10px; align-items:center;">
@@ -437,30 +487,30 @@
                   <div id="statusLed" style="width:12px; height:12px; background:#444; border-radius:50%;"></div>
               </div>
           </div>
-        </div>
 
-        <div>
-          <button class="btn-sec" onclick="adicionarBloco('timer')">+ Bloco (Tempo Fixo)</button>
-          <button class="btn-sec" onclick="adicionarBloco('movie')">+ Bloco (Filmes)</button>
-          <button class="btn-sec" onclick="adicionarBloco('pause')">+ Bloco (Pausa)</button>
-          <button class="btn-sec" onclick="salvarProgramacao()">💾 Salvar</button>
-          <button class="btn-sec" onclick="document.getElementById('fileInput').click()">📂 Carregar</button>
-          <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
+          <div style="margin-top:15px; display: flex; flex-direction: column; gap: 5px; width: 330px;">
+            <button class="btn-sec" onclick="adicionarBloco('timer')">+ Bloco (Tempo Fixo)</button>
+            <button class="btn-sec" onclick="adicionarBloco('movie')">+ Bloco (Filmes)</button>
+            <button class="btn-sec" onclick="adicionarBloco('pause')">+ Bloco (Pausa)</button>
+            <button class="btn-sec" onclick="salvarProgramacao()">💾 Salvar</button>
+            <button class="btn-sec" onclick="document.getElementById('fileInput').click()">📂 Carregar</button>
+            <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
+          </div>
 
-          <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333;">
+          <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 300px;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS:</label>
             <div style="margin-bottom:10px;">
               <label style="font-size:10px; display:block; color:#aaa;">LINK DA LOGO (BANNER FIXO):</label>
               <input type="text" id="logoUrl" oninput="atualizarLogos(this.value)" placeholder="Cole o link da imagem .png aqui" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:8px; border-radius:5px;">
             </div>
-            <p style="font-size:10px; color:#666; margin:0;">* Essa logo aparecerá no banner de filme e no banner fixo.</p>
           </div>
         </div>
       </div>
-      <div id="blocos" class="grid"></div>
+      
+      <div id="blocos" class="grid movel" style="top: 450px; left: 20px;"></div>
     </div>
 
-    <header>
+    <header class="movel" style="bottom: 80px; left: 20px; width: 90%;">
       <h1>📺 Grade de Programação</h1>
       <div id="grade">Carregando programação do administrador...</div>
     </header>
@@ -482,7 +532,6 @@ let blocoAnteriorPaused = false;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
-// Função para atualizar as imagens dos banners conforme o link digitado
 function atualizarLogos(url) {
   const logo1 = document.getElementById('letreiro-logo-img');
   const logo2 = document.getElementById('img-banner-fixo');
@@ -701,7 +750,7 @@ function addHora(i) { if (!blocos[i].horarios) blocos[i].horarios = []; blocos[i
 function editHora(i, idx, campo, valor) { blocos[i].horarios[idx][campo] = valor; }
 function removeHora(i, idx) { blocos[i].horarios.splice(idx, 1); const container = document.getElementById(`lista-horarios-${i}`); container.innerHTML = blocos[i].horarios.map((h, subIdx) => `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${subIdx}, 'inicio', this.value)" style="width:85px;"><input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${subIdx}, 'fim', this.value)" style="width:85px;"><button onclick="removeHora(${i}, ${subIdx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button></div>`).join(''); }
 
-// Lógica de Arrastar (Drag)
+// Lógica de Arrastar (Drag nativo para Banners)
 let isDragging = false; 
 let offsetX, offsetY; 
 let activeElement = null;
@@ -794,6 +843,49 @@ function resetStreamUI(btn, led) {
     btn.style.background = "#b71c1c"; 
     led.style.background = "#444"; 
 }
+
+/* --- LOGICA GLOBAL DE TRAVA E MOVIMENTACAO DOS ELEMENTOS --- */
+let layoutTravado = true;
+const btnTrava = document.createElement('button');
+btnTrava.id = 'btn-trava-layout';
+btnTrava.innerHTML = '🔒 Layout Travado';
+btnTrava.className = 'layout-travado';
+document.body.appendChild(btnTrava);
+
+btnTrava.onclick = () => {
+  layoutTravado = !layoutTravado;
+  if (layoutTravado) {
+    btnTrava.innerHTML = '🔒 Layout Travado';
+    btnTrava.className = 'layout-travado';
+    document.body.classList.remove('modo-edicao');
+  } else {
+    btnTrava.innerHTML = '🔓 Layout Livre';
+    btnTrava.className = 'layout-destravado';
+    document.body.classList.add('modo-edicao');
+  }
+};
+
+document.addEventListener('mousedown', (e) => {
+  if (layoutTravado) return;
+  const target = e.target.closest('.movel');
+  if (!target) return;
+  if (e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+  let shiftX = e.clientX - target.getBoundingClientRect().left;
+  let shiftY = e.clientY - target.getBoundingClientRect().top;
+
+  function moveAt(pageX, pageY) {
+    target.style.left = pageX - shiftX + 'px';
+    target.style.top = pageY - shiftY + 'px';
+  }
+  function onMouseMove(event) { moveAt(event.pageX, event.pageY); }
+  document.addEventListener('mousemove', onMouseMove);
+  document.onmouseup = function() {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.onmouseup = null;
+  };
+});
+document.addEventListener('dragstart', (e) => { if (e.target.closest('.movel')) e.preventDefault(); });
 </script>
 </body>
 </html>
