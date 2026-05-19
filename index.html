@@ -16,7 +16,8 @@
     color:#eee;
     font-family: 'Segoe UI', Arial, sans-serif;
     margin:0;
-    overflow-y: scroll;
+    overflow: auto !important; 
+    min-width: 100vw;
     min-height: 101vh;
     position: relative;
   }
@@ -205,11 +206,24 @@
   .btn-pri { background:#2e7d32; } .btn-pri:hover{ background:#3e8d42; }
   .btn-sec { background:#1976d2; } .btn-sec:hover{ background:#2a82d8; }
   .btn-admin { background:#6200ee; font-weight: bold; } .btn-admin:hover { background:#7c4dff; }
-  .grid { display:flex; flex-wrap:wrap; gap:12px; margin-top:18px; max-height:320px; overflow-y:auto; }
+  
+  .grid { 
+    display:flex; 
+    flex-wrap:wrap; 
+    gap:12px; 
+    margin-top:18px; 
+    max-height:400px; 
+    overflow-y: auto !important; 
+    overflow-x: hidden;
+    padding-right: 10px;
+    width: auto;
+    max-width: 90vw;
+  }
+  
   .bloco { position:relative; flex:0 0 260px; border:1px solid #2b2b2b; background:#171717; border-radius:10px; padding:12px; }
   .bloco h3 { margin:0 0 10px 0; font-size:15px; }
   .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .row input[type="time"] { width:160px; }
+  .row input[type="time"] { width:130px; }
   .hint { font-size:12px; color:#aaa; }
   .badge { display:inline-block; padding:2px 8px; border-radius:999px; background:#2a2a2a; font-size:12px; margin-left:6px; }
   .running::before {
@@ -357,8 +371,6 @@
       window._firebase_onValue(referenciaDinamica, snap => {
           const dadosFirebase = snap.val() || {};
           
-          // 1. Filtramos a lista atual para MANTER apenas o que NÃO é agendamento (filmes locais, pausas)
-          // Isso evita que blocos de "Filmes" se multipliquem ao atualizar o Admin
           let blocosManter = blocos.filter(b => b.tipo !== 'youtube' && !b._firebaseIndex);
 
           let novosBlocosAgendados = [];
@@ -381,19 +393,16 @@
                   horaFim: d.fim || '',
                   removido: false, 
                   _agendadoRodando: false, 
-                  _firebaseIndex: i // Marca que este bloco vem do Firebase
+                  _firebaseIndex: i 
               });
           });
 
-          // 2. Unimos os blocos que você já tinha com os novos agendamentos atualizados
           blocos = [...blocosManter, ...novosBlocosAgendados];
           
-          // 3. Atualizamos a tela
           blocosEl.innerHTML = '';
           blocos.forEach((b, i) => renderizarBloco(i, b));
           atualizarGrade();
           
-          // Mantém o índice dentro do limite caso a lista diminua
           if (idxBloco >= blocos.length) idxBloco = 0;
       });
   };
@@ -417,7 +426,7 @@
         <span class="preco">R$ 230,90</span>
       </button>
 
-      <button class="btn-plano-premium" onclick="gerarPix(349.90)">
+      <button class="btn-plano-premium" onclick="gerarPix(1.90)">
         <span class="nome">Plano Anual</span>
         <span class="preco">R$ 349,90</span>
       </button>
@@ -441,13 +450,13 @@
   <div id="conteudo-player" style="display:none;">
     <div class="wrap">
       
-      <div class="movel" style="top: 20px; right: 20px; display: flex; gap: 10px;">
+      <div class="movel" style="top: 20px; right: 20px; display: flex; gap: 10px; z-index: 10000;">
           <button class="btn-admin" onclick="window.open('admin.html', '_blank')">⚙️ ABRIR ADMIN</button>
           <button onclick="fazerLogout()" style="background:#b71c1c; font-weight: bold;">🚪 SAIR</button>
       </div>
 
       <div class="top">
-        <div class="movel" style="left: 20px; top: 100px;">
+        <div class="movel" style="left: 20px; top: 100px; z-index: 5000 !important;">
           
           <div id="letreiro-kbs-auto" onmousedown="startDrag(event)">
             <img id="letreiro-logo-img" src="">
@@ -588,7 +597,7 @@ function renderizarBloco(i, bloco){
         <div style="margin-top:10px; width:100%; background:#222; padding:8px; border-radius:5px;"><label>Dias da Semana:</label><br><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size:11px;">
             ${['domingo','segunda','terca','quarta','quinta','sexta','sabado'].map(d => `<label style="cursor:pointer;"><input type="checkbox" ${bloco.diasSelecionados && bloco.diasSelecionados.includes(d) ? 'checked' : ''} onchange="toggleDia(${i}, '${d}')"> ${d.charAt(0).toUpperCase() + d.slice(1)}</label>`).join('')}
           </div></div>
-        <div style="margin-top:10px; width:100% text-align: left;"><label>Horários Programados:</label><div id="lista-horarios-${i}">${(bloco.horarios || []).map((h, idx) => `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${idx}, 'inicio', this.value)" style="width:85px;"><input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${idx}, 'fim', this.value)" style="width:120px;"><button onclick="removeHora(${i}, ${idx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button></div>`).join('')}</div><button onclick="addHora(${i})" style="font-size:11px; width:100%; margin-top:5px; background:#1976d2; color:white; border-radius:5px; padding:5px;">+ Adicionar Horário</button></div>
+        <div style="margin-top:10px; width:100% text-align: left;"><label>Horários Programados:</label><div id="lista-horarios-${i}">${(bloco.horarios || []).map((h, idx) => `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${idx}, 'inicio', this.value)" style="width:85px;"><input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${idx}, 'fim', this.value)" style="width:85px;"><button onclick="removeHora(${i}, ${idx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button></div>`).join('')}</div><button onclick="addHora(${i})" style="font-size:11px; width:100%; margin-top:5px; background:#1976d2; color:white; border-radius:5px; padding:5px;">+ Adicionar Horário</button></div>
       `:''}
       ${bloco.tipo==='pause' ? `<label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">`:''}
       ${bloco.tipo==='movie' ? `<label>Limite:</label><input type="number" min="1" value="${bloco.limitePorCiclo||3}" onchange="definirLimite(${i}, this.value)"><div style="margin-top:8px; width:100%;"><button class="mini-btn" onclick="voltarArquivo(${i})">⏮ Voltar vídeo</button><button class="mini-btn" onclick="pularArquivo(${i})">⏭ Pular vídeo</button></div>`:''}
