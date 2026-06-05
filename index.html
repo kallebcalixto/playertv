@@ -22,7 +22,6 @@
     position: relative;
   }
 
-  /* --- NOVOS ESTILOS PARA MOVIMENTAÇÃO --- */
   .movel {
     position: absolute !important;
     cursor: move;
@@ -50,7 +49,6 @@
   }
   .layout-destravado { background: #ff4d4d !important; color: #fff; }
   .layout-travado { background: #2e7d32 !important; color: #fff; }
-  /* -------------------------------------- */
 
   #tela-pagamento {
     position: fixed; 
@@ -184,7 +182,7 @@
     width:500px; height:280px; 
     background:#000 !important;
     border:1px solid #333; border-radius:8px; 
-    transition: opacity 0.15s ease-in-out; /* Transição suave de opacidade */
+    transition: opacity 0.15s ease-in-out; 
   }
 
   video::-webkit-media-controls-start-playback-button { display: none !important; }
@@ -630,9 +628,9 @@ function renderizarBloco(i, bloco){
         <label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">
         <div style="margin-top:10px; width:100%; background:#222; padding:8px; border-radius:5px;"><label>Dias da Semana:</label><br><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size:11px;">
             ${['domingo','segunda','terca','quarta','quinta','sexta','sabado'].map(d => `<label style="cursor:pointer;"><input type="checkbox" ${bloco.diasSelecionados && bloco.diasSelecionados.includes(d) ? 'checked' : ''} onchange="toggleDia(${i}, '${d}')"> ${d.charAt(0).toUpperCase() + d.slice(1)}</label>`).join('')}
-          </div></div>
+         </div></div>
         <div style="margin-top:10px; width:100% text-align: left;"><label>Horários Programados:</label><div id="lista-horarios-${i}">${(bloco.horarios || []).map((h, idx) => `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${idx}, 'inicio', this.value)" style="width:85px;"><input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${idx}, 'fim', this.value)" style="width:85px;"><button onclick="removeHora(${i}, ${idx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button></div>`).join('')}</div><button onclick="addHora(${i})" style="font-size:11px; width:100%; margin-top:5px; background:#1976d2; color:white; border-radius:5px; padding:5px;">+ Adicionar Horário</button></div>
-      `:''}
+     `:''}
       ${bloco.tipo==='pause' ? `<label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">`:''}
       ${bloco.tipo==='movie' ? `<label>Limite:</label><input type="number" min="1" value="${bloco.limitePorCiclo||3}" onchange="definirLimite(${i}, this.value)"><div style="margin-top:8px; width:100%;"><button class="mini-btn" onclick="voltarArquivo(${i})">⏮ Voltar vídeo</button><button class="mini-btn" onclick="pularArquivo(${i})">⏭ Pular vídeo</button></div>`:''}
       ${isYoutubeM3U ? `<label>Início:</label><input type="time" step="1" value="${bloco.horaInicio||''}" disabled><label>Fim:</label><input type="time" step="1" value="${bloco.horaFim||''}" disabled>`:''}
@@ -683,13 +681,11 @@ function verificarAgendados() {
         idxBloco = blocoAnteriorIdx; 
         blocoAnteriorIdx = -1; 
         
-        // ESCONDE O PLAYER IMEDIATAMENTE (CORREÇÃO ANTI-FLASH)
         video.style.opacity = '0';
         video.style.backgroundColor = '#000000';
         
         tocarAtual();
         
-        // Força a injeção do tempo antigo sem delay e sem renderizar o frame zero
         if (blocos[idxBloco] && blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
           video.currentTime = blocoAnteriorProgresso;
           if (blocoAnteriorPaused) video.pause();
@@ -710,7 +706,6 @@ function tocarAtual() {
   const hoje = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
   const horaAgora = agora.toTimeString().split(' ')[0];
 
-  // 1. VALIDAÇÃO EM MEMÓRIA
   if (b.tipo === 'timer') {
     const diaMatch = b.diasSelecionados && b.diasSelecionados.includes(hoje);
     const horarioMatch = b.horarios && b.horarios.some(h => horaAgora >= h.inicio && h.fim > horaAgora);
@@ -722,7 +717,6 @@ function tocarAtual() {
     if (!diaMatchAdmin || !dentroDoHorarioAdmin) { pularParaProximo(); return; }
   }
 
-  // 2. SE PASSOU, PREPARA A INTERFACE
   document.querySelectorAll('.bloco').forEach(el => el.classList.remove('running'));
   clearTimeout(pauseTimer); 
   detachTimers(); 
@@ -741,7 +735,6 @@ function tocarAtual() {
   if (b.tipo === 'youtube') { if (b.ytlink) startYouTubeNow(b); else if (b.m3ulink) startM3UNow(b); return; }
   if (b.arquivos.length === 0) { pularParaProximo(); return; }
 
-  // 3. ATIVAÇÃO DO BLACKOUT (TELA TOTALMENTE PRETA ATÉ CARREGAR O SEGUNDO EXATO)
   video.style.opacity = '0';
   video.style.backgroundColor = '#000000';
 
@@ -750,11 +743,9 @@ function tocarAtual() {
     video.src = novaUrl;
   }
   
-  // Define o ponto do vídeo
   const tempoAlvo = b.progresso[b.arquivoAtual] || 0;
   video.currentTime = tempoAlvo;
   
-  // Se o vídeo for começar do zero absoluto (0s), ele não precisa buscar nada, pode mostrar na hora
   if (tempoAlvo === 0) {
     video.style.opacity = '1';
   }
@@ -772,12 +763,10 @@ function pularParaProximo() {
 function attachHandlersFor(b){
   detachTimers();
   
-  // EVENTO CHAVE: Só remove a tela preta (opacity=1) quando o vídeo terminar de dar o salto temporal correto!
   video.onseeked = () => {
     video.style.opacity = '1';
   };
 
-  // Evento extra caso o vídeo já esteja pronto e estável
   video.onplaying = () => {
     if (video.currentTime > 0) {
       video.style.opacity = '1';
@@ -816,7 +805,13 @@ window.proximoBloco = function(){ idxBloco=(idxBloco+1)%blocos.length; tocarAtua
 window.pausar = function(){ video.pause(); }
 window.retomar = function(){ video.play(); }
 
-function startYouTubeNow(b){ ytplayer.style.display='block'; video.style.display='none'; const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); if(id) ytplayer.src=`https://www.youtube.com/embed/${id[1]}?autoplay=1`; }
+function startYouTubeNow(b) {
+    if (video) { video.pause(); }
+    ytplayer.style.display = 'block'; 
+    video.style.display = 'none'; 
+    const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); 
+    if(id) ytplayer.src=`https://www.youtube.com/embed/${id[1]}?autoplay=1`; 
+}
 function stopYouTube(){ ytplayer.src=''; ytplayer.style.display='none'; }
 
 function startM3UNow(b) {
@@ -854,7 +849,6 @@ window.addHora = function(i) { if (!blocos[i].horarios) blocos[i].horarios = [];
 window.editHora = function(i, idx, campo, valor) { blocos[i].horarios[idx][campo] = valor; }
 window.removeHora = function(i, idx) { blocos[i].horarios.splice(idx, 1); const container = document.getElementById(`lista-horarios-${i}`); container.innerHTML = blocos[i].horarios.map((h, subIdx) => `<div style="display:flex; gap:5px; margin-bottom:5px;"><input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${subIdx}, 'inicio', this.value)" style="width:85px;"><input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${subIdx}, 'fim', this.value)" style="width:85px;"><button onclick="removeHora(${i}, ${subIdx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px;">X</button></div>`).join(''); }
 
-// Lógica de Arrastar (Drag nativo para Banners)
 let isDragging = false; 
 let offsetX, offsetY; 
 let activeElement = null;
@@ -883,7 +877,6 @@ function stopDrag() {
     document.removeEventListener('mousemove', onDrag); 
 }
 
-// Lógica de Transmissão por REGIÃO DO PLAYER
 let mediaRecorder;
 let socket;
 
@@ -948,7 +941,6 @@ function resetStreamUI(btn, led) {
     led.style.background = "#444"; 
 }
 
-/* --- LOGICA GLOBAL DE TRAVA E MOVIMENTACAO DOS ELEMENTOS --- */
 let layoutTravado = true;
 const btnTrava = document.createElement('button');
 btnTrava.id = 'btn-trava-layout';
@@ -990,22 +982,19 @@ document.addEventListener('mousedown', (e) => {
   };
 });
 document.addEventListener('dragstart', (e) => { if (e.target.closest('.movel')) e.preventDefault(); });
-</script>
 
-<script>
-  const player = document.getElementById('player');
-  
-  function limparPlayer() {
-    if (player) {
-      player.controls = false; 
-      const shadow = player.shadowRoot;
-      if (shadow) {
-        const loading = shadow.querySelector('.media-loading-indicator');
-        if (loading) loading.style.display = 'none';
-      }
+const player = document.getElementById('player');
+function limparPlayer() {
+  if (player) {
+    player.controls = false; 
+    const shadow = player.shadowRoot;
+    if (shadow) {
+      const loading = shadow.querySelector('.media-loading-indicator');
+      if (loading) loading.style.display = 'none';
     }
   }
-  setInterval(limparPlayer, 500);
+}
+setInterval(limparPlayer, 500);
 </script>
 </body>
 </html>
