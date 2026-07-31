@@ -624,7 +624,7 @@
             <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
           </div>
 
-          <!-- CAIXA DE CONFIGURAÇÃO DE BANNERS EXPANDIDA COM CONTROLE INDEPENDENTE DE TEMPO/INTERVALO -->
+          <!-- CAIXA DE CONFIGURAÇÃO DE BANNERS -->
           <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 300px; max-height: 400px; overflow-y: auto;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS:</label>
             
@@ -674,7 +674,7 @@
               </div>
             </div>
 
-            <!-- BLOCO DE CONFIGURAÇÃO: A SEGUIR (COM TEMPO/INTERVALO PRÓPRIO) -->
+            <!-- BLOCO DE CONFIGURAÇÃO: A SEGUIR -->
             <div style="margin-top:10px; border-top: 1px solid #444; padding-top: 10px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom:5px;">
                 <label style="font-size:10px; color:#4fc3f7; font-weight:bold;">MOSTRAR "A SEGUIR":</label>
@@ -938,9 +938,14 @@ function obterNomeASeguir() {
     return nomeASeguir;
 }
 
+// FUNÇÃO GERENCIADORA COM BLOQUEIO MÚTUO (NUNCA APARECEM JUNTOS)
 function gerenciarBannerKBS() {
   let ligado = document.getElementById('toggleLetreiro').checked;
   if (!ligado) return; 
+
+  const bannerAseguir = document.getElementById('letreiro-aseguir');
+  // Se o "A SEGUIR" estiver visível agora, pula esta rodada para não sobrepor
+  if (bannerAseguir.style.display === 'flex') return;
 
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
@@ -965,9 +970,14 @@ function gerenciarBannerKBS() {
   }
 }
 
+// FUNÇÃO GERENCIADORA COM BLOQUEIO MÚTUO (NUNCA APARECEM JUNTOS)
 function gerenciarAseguir() {
   let ligado = document.getElementById('toggleAseguir').checked;
   if (!ligado) return; 
+
+  const bannerExibindo = document.getElementById('letreiro-kbs-auto');
+  // Se o "EXIBINDO" estiver visível agora, pula esta rodada para não sobrepor
+  if (bannerExibindo.style.display === 'flex') return;
 
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-aseguir');
