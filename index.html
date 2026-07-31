@@ -624,7 +624,7 @@
             <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
           </div>
 
-          <!-- CAIXA DE CONFIGURAÇÃO DE BANNERS EXPANDIDA -->
+          <!-- CAIXA DE CONFIGURAÇÃO DE BANNERS EXPANDIDA COM CONTROLE INDEPENDENTE DE TEMPO/INTERVALO -->
           <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 300px; max-height: 400px; overflow-y: auto;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS:</label>
             
@@ -674,7 +674,7 @@
               </div>
             </div>
 
-            <!-- NOVO BLOCO DE CONFIGURAÇÃO: A SEGUIR -->
+            <!-- BLOCO DE CONFIGURAÇÃO: A SEGUIR (COM TEMPO/INTERVALO PRÓPRIO) -->
             <div style="margin-top:10px; border-top: 1px solid #444; padding-top: 10px;">
               <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom:5px;">
                 <label style="font-size:10px; color:#4fc3f7; font-weight:bold;">MOSTRAR "A SEGUIR":</label>
@@ -880,7 +880,6 @@ function extrairNomeLimpo(nomeBruto) {
     return nomeLimpo;
 }
 
-// LÓGICA INTELIGENTE PARA LER O PRÓXIMO PROGRAMA
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
     const b = blocos[idxBloco];
@@ -889,7 +888,6 @@ function obterNomeASeguir() {
     let nextIsNextBlock = false;
     let nomeASeguir = "";
 
-    // Verifica se o próximo arquivo ainda está dentro do mesmo bloco
     if (b.tipo === 'movie') {
         if (b.arquivos && b.arquivos.length > 0) {
             if ((b._count || 0) + 1 >= (b.limitePorCiclo || 3)) {
@@ -913,7 +911,6 @@ function obterNomeASeguir() {
         nextIsNextBlock = true;
     }
 
-    // Se for passar para o próximo bloco, pega a informação do bloco seguinte
     if (nextIsNextBlock) {
         let nextIdx = (idxBloco + 1) % blocos.length;
         let loops = 0;
@@ -925,7 +922,7 @@ function obterNomeASeguir() {
         let nextB = blocos[nextIdx];
         if (nextB && !nextB.removido) {
             if (nextB.nome) {
-                nomeASeguir = nextB.nome; // Usa o nome que você digitou no painel
+                nomeASeguir = nextB.nome; 
             } else if (nextB.tipo === 'youtube') {
                 nomeASeguir = "Transmissão Ao Vivo";
             } else if (nextB.tipo === 'pause') {
@@ -975,7 +972,6 @@ function gerenciarAseguir() {
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-aseguir');
   
-  // Oculta também durante transmissões para manter a tela limpa
   if (b && b.tipo === 'youtube') {
       banner.style.display = 'none'; 
       return;
