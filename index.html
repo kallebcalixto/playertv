@@ -198,14 +198,16 @@
   .btn-sec { background:#1976d2; } .btn-sec:hover{ background:#2a82d8; }
   .btn-admin { background:#6200ee; font-weight: bold; } .btn-admin:hover { background:#7c4dff; }
    
+  /* CSS ALTERADO: Bloqueia a quebra de linha (wrap) e ativa rolagem horizontal para ficar lado a lado */
   .grid { 
     display:flex; 
-    flex-wrap:wrap; 
+    flex-wrap: nowrap; /* Traz os blocos para o lado a lado */
     gap:12px; 
     margin-top:18px; 
-    max-height:400px; 
+    max-height:460px; /* Levemente maior para acomodar a barra de rolagem */
     overflow-y: auto !important; 
-    overflow-x: hidden;
+    overflow-x: auto; /* Permite rolar para o lado */
+    padding-bottom: 15px;
     padding-right: 10px;
     width: auto;
     max-width: 90vw;
@@ -352,7 +354,6 @@
         if (config.testeUtilizado) { if (btnTeste) btnTeste.style.display = 'none'; } 
         else { if (btnTeste) btnTeste.style.display = 'flex'; }
 
-        // Atualiza a contagem e verifica o botão de renovação em tempo real
         atualizarContadorPlano(config.expiracao);
 
         if (config.expiracao < agora) {
@@ -372,12 +373,10 @@
     }
   });
 
-  // Função para abrir o painel de planos ao clicar no botão de renovar piscando
   window.abrirTelaPagamento = function() {
     document.getElementById('tela-pagamento').style.display = 'flex';
   };
 
-  // Função que calcula a regressiva e controla os 5 dias finais
   function atualizarContadorPlano(expiracaoMs) {
     const containerContador = document.getElementById('contador-plano-container');
     if (!containerContador) return;
@@ -393,7 +392,6 @@
     const minutos = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
     const segundos = Math.floor((diffMs % (1000 * 60)) / 1000);
 
-    // Se faltar 5 dias ou menos, mostra o botão vermelho piscando
     if (dias <= 5) {
       containerContador.innerHTML = `
         <button class="btn-renovar-alerta" onclick="abrirTelaPagamento()">
@@ -408,7 +406,6 @@
     }
   }
 
-  // Intervalo de atualização do contador a cada 1 segundo
   setInterval(() => {
     const user = auth.currentUser;
     if (!user) return;
@@ -700,9 +697,16 @@ function atualizarLogos(url) {
   }
 }
 
+// ALTERAÇÃO: PROTEÇÃO INTELIGENTE DO BANNER (NÃO EXECUTA EM YOUTUBE OU M3U)
 function gerenciarBannerKBS() {
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
+  
+  if (b && b.tipo === 'youtube') {
+      banner.style.display = 'none'; // Impede de aparecer no Youtube/M3U
+      return;
+  }
+  
   if (b && b.arquivos && b.arquivos[b.arquivoAtual]) {
     const nomeBruto = b.arquivos[b.arquivoAtual].file.name;
     let nomeLimpo = nomeBruto.split(/\.(mp4|mkv|avi|webm|ogg|mov)$/i)[0].split(/DUBLADO|convertido|DVDRip|XviD|_00|1080p|720p/i)[0].replace(/^[\s.]+/, "").trim();
@@ -721,9 +725,14 @@ function fmt(s){ s=Math.max(0,Math.floor(s||0)); const h=String(Math.floor(s/360
 function timeToSec(str){ if(!str) return 0; const p=str.split(':').map(Number); if(p.length === 3) return p[0]*3600 + p[1]*60 + p[2]; return (p[0]||0)*3600+(p[1]||0)*60; }
 function anyPlayableBlocks(){ return blocos.some(b=>b && !b.removido); }
 
+// ALTERAÇÃO: PEDE O NOME DO BLOCO AO CLICAR NO BOTÃO DE CRIAR
 window.adicionarBloco = function(tipo){
   if (tipo === 'youtube') return alert('Blocos YouTube / M3U são gerenciados apenas pelo painel Admin.');
-  const bloco = { nome: '', tipo, arquivos: [], progresso: [], tempo: (tipo==='timer'||tipo==='pause'?300:0), sessaoRestante: 0, pauseRestante: 0, arquivoAtual: 0, limitePorCiclo: (tipo==='movie'?3:0), ytlink:'', m3ulink:'', diaSemana:'', horaInicio:'', horaFim:'', removido:false, _agendadoRodando:false, diasSelecionados: [], horarios: [] };
+  
+  let nomeSugerido = prompt("Digite o nome deste bloco para organizar (ex: Filmes Ação, Jaspion, etc):", "");
+  if (nomeSugerido === null) return; // Se cancelar, não cria o bloco
+
+  const bloco = { nome: nomeSugerido, tipo, arquivos: [], progresso: [], tempo: (tipo==='timer'||tipo==='pause'?300:0), sessaoRestante: 0, pauseRestante: 0, arquivoAtual: 0, limitePorCiclo: (tipo==='movie'?3:0), ytlink:'', m3ulink:'', diaSemana:'', horaInicio:'', horaFim:'', removido:false, _agendadoRodando:false, diasSelecionados: [], horarios: [] };
   const i = blocos.push(bloco)-1;
   renderizarBloco(i, bloco);
   atualizarGrade();
@@ -863,7 +872,15 @@ function tocarAtual() {
   if (card) card.classList.add('running');
 
   if (b.tipo === 'pause') { video.pause(); pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); return; }
-  if (b.tipo === 'youtube') { if (b.ytlink) startYouTubeNow(b); else if (b.m3ulink) startM3UNow(b); return; }
+  
+  // ALTERAÇÃO: ANTES DE ENTRAR NO YOUTUBE/M3U, GARANTE QUE O LETREIRO SUMA DA TELA.
+  if (b.tipo === 'youtube') { 
+      document.getElementById('letreiro-kbs-auto').style.display = 'none';
+      if (b.ytlink) startYouTubeNow(b); 
+      else if (b.m3ulink) startM3UNow(b); 
+      return; 
+  }
+  
   if (b.arquivos.length === 0) { pularParaProximo(); return; }
 
   video.style.opacity = '0';
