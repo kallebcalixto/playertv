@@ -234,6 +234,7 @@
     text-shadow: 2px 2px 4px #000; 
     cursor: move;
     user-select: none;
+    transition: color 0.3s, border-color 0.3s;
   }
   #letreiro-logo-img { height: 25px; width: auto; display: none; pointer-events: none; }
   #letreiro-texto-arquivo { pointer-events: none; }
@@ -602,7 +603,6 @@
             <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
           </div>
 
-          <!-- ALTERAÇÃO: CONTROLES DO LETREIRO AQUI DENTRO -->
           <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 300px;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS:</label>
             
@@ -627,6 +627,26 @@
               <div style="flex:1;">
                 <label style="font-size:10px; display:block; color:#aaa;">DURAÇÃO (seg):</label>
                 <input type="number" id="duracaoLetreiro" value="20" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+              </div>
+            </div>
+
+            <!-- NOVA ÁREA DE CORES E FONTES -->
+            <div style="display:flex; gap: 10px; margin-top:10px;">
+              <div style="flex:1;">
+                <label style="font-size:10px; display:block; color:#aaa;">COR DO TEXTO:</label>
+                <input type="color" id="corTextoLetreiro" value="#ffd700" onchange="atualizarEstiloLetreiro()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:10px; display:block; color:#aaa;">FONTE:</label>
+                <select id="fonteLetreiro" onchange="atualizarEstiloLetreiro()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px;">
+                  <option value="'Segoe UI', Arial, sans-serif">Padrão</option>
+                  <option value="Arial, sans-serif">Arial</option>
+                  <option value="'Courier New', Courier, monospace">Courier New</option>
+                  <option value="'Impact', sans-serif">Impact</option>
+                  <option value="'Times New Roman', Times, serif">Times</option>
+                  <option value="'Comic Sans MS', cursive, sans-serif">Comic</option>
+                  <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+                </select>
               </div>
             </div>
 
@@ -662,7 +682,6 @@ let sistemaIniciado = false;
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
 
-// Variáveis para controlar o tempo do banner dinamicamente
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
 
@@ -691,6 +710,19 @@ window.aplicarLayout = function(posicoes) {
 
 window.salvarHorarioReinicio = function(valor) { localStorage.setItem('kbs_horario_reinicio', valor); };
 
+// NOVA FUNÇÃO: Aplica as cores e fontes no letreiro
+window.atualizarEstiloLetreiro = function() {
+    const cor = document.getElementById('corTextoLetreiro').value;
+    const fonte = document.getElementById('fonteLetreiro').value;
+    const letreiro = document.getElementById('letreiro-kbs-auto');
+    
+    if(letreiro) {
+        letreiro.style.color = cor;
+        letreiro.style.borderLeftColor = cor; 
+        letreiro.style.fontFamily = fonte;
+    }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     const horarioSalvo = localStorage.getItem('kbs_horario_reinicio');
     if (horarioSalvo) {
@@ -703,8 +735,8 @@ window.addEventListener('DOMContentLoaded', () => {
         window.aplicarLayout(JSON.parse(layoutSalvo));
     }
 
-    // Inicia o timer do banner com as configurações iniciais
     reiniciarTimerBanner();
+    atualizarEstiloLetreiro(); // Garante que a fonte e cor padrão sejam aplicadas ao carregar
 });
 
 let ultimoReinicio = "";
@@ -734,7 +766,6 @@ function atualizarLogos(url) {
   }
 }
 
-// ALTERAÇÃO: FUNÇÃO PARA GERENCIAR O TEMPO DINÂMICO DO BANNER
 window.reiniciarTimerBanner = function() {
     if (timerBannerAtivo) clearInterval(timerBannerAtivo);
     if (timerOcultarBanner) clearTimeout(timerOcultarBanner);
@@ -754,13 +785,13 @@ window.reiniciarTimerBanner = function() {
 
 function gerenciarBannerKBS() {
   let ligado = document.getElementById('toggleLetreiro').checked;
-  if (!ligado) return; // Se a chave estiver desligada, ignora.
+  if (!ligado) return; 
 
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
   
   if (b && b.tipo === 'youtube') {
-      banner.style.display = 'none'; // Impede de aparecer no Youtube/M3U
+      banner.style.display = 'none'; 
       return;
   }
   
@@ -772,9 +803,11 @@ function gerenciarBannerKBS() {
     document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
     const urlLogo = document.getElementById('logoUrl').value;
     atualizarLogos(urlLogo);
+    
+    // Garante que a estilização está atualizada antes de mostrar
+    atualizarEstiloLetreiro();
     banner.style.display = 'flex';
 
-    // Pega a duração escolhida na tela e esconde o banner depois desse tempo
     let duracaoSegundos = parseFloat(document.getElementById('duracaoLetreiro').value) || 20;
     let duracaoMs = duracaoSegundos * 1000;
 
