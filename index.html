@@ -198,15 +198,14 @@
   .btn-sec { background:#1976d2; } .btn-sec:hover{ background:#2a82d8; }
   .btn-admin { background:#6200ee; font-weight: bold; } .btn-admin:hover { background:#7c4dff; }
    
-  /* CSS ALTERADO: Bloqueia a quebra de linha (wrap) e ativa rolagem horizontal para ficar lado a lado */
   .grid { 
     display:flex; 
-    flex-wrap: nowrap; /* Traz os blocos para o lado a lado */
+    flex-wrap: nowrap;
     gap:12px; 
     margin-top:18px; 
-    max-height:460px; /* Levemente maior para acomodar a barra de rolagem */
+    max-height:460px;
     overflow-y: auto !important; 
-    overflow-x: auto; /* Permite rolar para o lado */
+    overflow-x: auto; 
     padding-bottom: 15px;
     padding-right: 10px;
     width: auto;
@@ -282,6 +281,15 @@
     text-transform: uppercase;
     text-align: center;
     display: inline-block;
+  }
+
+  /* ESTILOS DO BOTÃO LIGA/DESLIGA (SWITCH) */
+  .switch input:checked + .slider { background-color: #2e7d32; }
+  .switch input:focus + .slider { box-shadow: 0 0 1px #2e7d32; }
+  .switch input:checked + .slider:before { transform: translateX(14px); }
+  .slider:before {
+    position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px;
+    background-color: white; transition: .4s; border-radius: 50%;
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -594,12 +602,34 @@
             <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
           </div>
 
+          <!-- ALTERAÇÃO: CONTROLES DO LETREIRO AQUI DENTRO -->
           <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 300px;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS:</label>
+            
             <div style="margin-bottom:10px;">
               <label style="font-size:10px; display:block; color:#aaa;">LINK DA LOGO (BANNER FIXO):</label>
               <input type="text" id="logoUrl" oninput="atualizarLogos(this.value)" placeholder="Cole o link da imagem .png aqui" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:8px; border-radius:5px;">
             </div>
+
+            <div style="margin-bottom:10px; display: flex; align-items: center; justify-content: space-between; border-top: 1px solid #444; padding-top: 10px;">
+              <label style="font-size:10px; color:#aaa;">MOSTRAR NOME DO ARQUIVO:</label>
+              <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
+                <input type="checkbox" id="toggleLetreiro" checked onchange="reiniciarTimerBanner()" style="opacity:0; width:0; height:0;">
+                <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#b71c1c; transition:.4s; border-radius:20px;"></span>
+              </label>
+            </div>
+            
+            <div style="display:flex; gap: 10px;">
+              <div style="flex:1;">
+                <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
+                <input type="number" id="intervaloLetreiro" value="3" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+              </div>
+              <div style="flex:1;">
+                <label style="font-size:10px; display:block; color:#aaa;">DURAÇÃO (seg):</label>
+                <input type="number" id="duracaoLetreiro" value="20" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+              </div>
+            </div>
+
           </div>
         </div>
       </div>
@@ -631,6 +661,10 @@ let sistemaIniciado = false;
 
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
+
+// Variáveis para controlar o tempo do banner dinamicamente
+let timerBannerAtivo = null;
+let timerOcultarBanner = null;
 
 window.aplicarLayout = function(posicoes) {
   if (!posicoes) return;
@@ -668,6 +702,9 @@ window.addEventListener('DOMContentLoaded', () => {
     if (layoutSalvo) {
         window.aplicarLayout(JSON.parse(layoutSalvo));
     }
+
+    // Inicia o timer do banner com as configurações iniciais
+    reiniciarTimerBanner();
 });
 
 let ultimoReinicio = "";
@@ -697,8 +734,28 @@ function atualizarLogos(url) {
   }
 }
 
-// ALTERAÇÃO: PROTEÇÃO INTELIGENTE DO BANNER (NÃO EXECUTA EM YOUTUBE OU M3U)
+// ALTERAÇÃO: FUNÇÃO PARA GERENCIAR O TEMPO DINÂMICO DO BANNER
+window.reiniciarTimerBanner = function() {
+    if (timerBannerAtivo) clearInterval(timerBannerAtivo);
+    if (timerOcultarBanner) clearTimeout(timerOcultarBanner);
+    
+    let ligado = document.getElementById('toggleLetreiro').checked;
+    
+    if (!ligado) {
+        document.getElementById('letreiro-kbs-auto').style.display = 'none';
+        return; 
+    }
+
+    let intervaloMinutos = parseFloat(document.getElementById('intervaloLetreiro').value) || 3;
+    let intervaloMs = intervaloMinutos * 60 * 1000;
+
+    timerBannerAtivo = setInterval(gerenciarBannerKBS, intervaloMs);
+}
+
 function gerenciarBannerKBS() {
+  let ligado = document.getElementById('toggleLetreiro').checked;
+  if (!ligado) return; // Se a chave estiver desligada, ignora.
+
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
   
@@ -716,21 +773,25 @@ function gerenciarBannerKBS() {
     const urlLogo = document.getElementById('logoUrl').value;
     atualizarLogos(urlLogo);
     banner.style.display = 'flex';
-    setTimeout(() => { banner.style.display = 'none'; }, 20000); 
+
+    // Pega a duração escolhida na tela e esconde o banner depois desse tempo
+    let duracaoSegundos = parseFloat(document.getElementById('duracaoLetreiro').value) || 20;
+    let duracaoMs = duracaoSegundos * 1000;
+
+    if (timerOcultarBanner) clearTimeout(timerOcultarBanner);
+    timerOcultarBanner = setTimeout(() => { banner.style.display = 'none'; }, duracaoMs); 
   }
 }
-setInterval(gerenciarBannerKBS, 180000);
 
 function fmt(s){ s=Math.max(0,Math.floor(s||0)); const h=String(Math.floor(s/3600)).padStart(2,'0'); const m=String(Math.floor((s%3600)/60)).padStart(2,'0'); const ss=String(s%60).padStart(2,'0'); return `${h}:${m}:${ss}`; }
 function timeToSec(str){ if(!str) return 0; const p=str.split(':').map(Number); if(p.length === 3) return p[0]*3600 + p[1]*60 + p[2]; return (p[0]||0)*3600+(p[1]||0)*60; }
 function anyPlayableBlocks(){ return blocos.some(b=>b && !b.removido); }
 
-// ALTERAÇÃO: PEDE O NOME DO BLOCO AO CLICAR NO BOTÃO DE CRIAR
 window.adicionarBloco = function(tipo){
   if (tipo === 'youtube') return alert('Blocos YouTube / M3U são gerenciados apenas pelo painel Admin.');
   
   let nomeSugerido = prompt("Digite o nome deste bloco para organizar (ex: Filmes Ação, Jaspion, etc):", "");
-  if (nomeSugerido === null) return; // Se cancelar, não cria o bloco
+  if (nomeSugerido === null) return; 
 
   const bloco = { nome: nomeSugerido, tipo, arquivos: [], progresso: [], tempo: (tipo==='timer'||tipo==='pause'?300:0), sessaoRestante: 0, pauseRestante: 0, arquivoAtual: 0, limitePorCiclo: (tipo==='movie'?3:0), ytlink:'', m3ulink:'', diaSemana:'', horaInicio:'', horaFim:'', removido:false, _agendadoRodando:false, diasSelecionados: [], horarios: [] };
   const i = blocos.push(bloco)-1;
@@ -873,7 +934,6 @@ function tocarAtual() {
 
   if (b.tipo === 'pause') { video.pause(); pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); return; }
   
-  // ALTERAÇÃO: ANTES DE ENTRAR NO YOUTUBE/M3U, GARANTE QUE O LETREIRO SUMA DA TELA.
   if (b.tipo === 'youtube') { 
       document.getElementById('letreiro-kbs-auto').style.display = 'none';
       if (b.ytlink) startYouTubeNow(b); 
