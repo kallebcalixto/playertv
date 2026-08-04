@@ -28,10 +28,20 @@
     z-index: 10;
     transition: outline 0.2s;
   }
+  
+  /* CLASSE PARA REDIMENSIONAR (CLICAR E ARRASTAR O CANTO) */
+  .redimensionavel {
+    overflow: auto; 
+    box-sizing: border-box;
+  }
   .modo-edicao .movel {
     outline: 2px dashed var(--primary-color);
     background: rgba(46, 125, 50, 0.05);
   }
+  .modo-edicao .redimensionavel {
+    resize: both; /* Ativa a alça de redimensionamento apenas no modo edição */
+  }
+
   #btn-trava-layout {
     position: fixed;
     bottom: 20px;
@@ -142,23 +152,12 @@
     font-size: 18px;
   }
 
-  .btn-plano-premium.destaque {
-    border-color: var(--gold);
-  }
-  .btn-plano-premium.destaque .preco {
-    color: var(--gold);
-  }
+  .btn-plano-premium.destaque { border-color: var(--gold); }
+  .btn-plano-premium.destaque .preco { color: var(--gold); }
 
   #qrcode-container {
-    margin-top: 25px;
-    background: #000;
-    padding: 20px;
-    border-radius: 16px;
-    border: 1px solid #222;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
+    margin-top: 25px; background: #000; padding: 20px; border-radius: 16px;
+    border: 1px solid #222; display: flex; flex-direction: column; align-items: center; gap: 10px;
   }
 
   #tela-login {
@@ -172,9 +171,10 @@
   .card-login h2 { margin-bottom: 10px; color: #2e7d32; font-weight: 900; }
   .card-login p { color: #888; font-size: 14px; margin-bottom: 25px; }
 
-  header { padding:16px 20px; background:#1b1b1b; border-top:1px solid #2a2a2a; }
-  header h1 { margin:0 0 6px 0; font-size:18px; }
-  #grade { white-space:pre-line; font-size:13px; color:#ddd; max-height:220px; overflow-y:auto; }
+  header { padding:16px 20px; background:#1b1b1b; border:1px solid #2a2a2a; display: flex; flex-direction: column; border-radius: 10px; }
+  header h1 { margin:0 0 6px 0; font-size:18px; flex-shrink: 0; }
+  #grade { white-space:pre-line; font-size:13px; color:#ddd; flex-grow: 1; overflow-y:auto; }
+  
   .wrap { max-width:1200px; margin:0 auto; padding:20px; }
   .top { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
 
@@ -198,18 +198,17 @@
   .btn-sec { background:#1976d2; } .btn-sec:hover{ background:#2a82d8; }
   .btn-admin { background:#6200ee; font-weight: bold; } .btn-admin:hover { background:#7c4dff; }
    
+  /* BLOCOS COM ROLAGEM COMPLETA ATIVADA NAS LATERAIS E EMBAIXO */
   .grid { 
     display:flex; 
-    flex-wrap: nowrap;
+    flex-wrap: wrap; /* Permite quebrar linha normalmente */
     gap:12px; 
     margin-top:18px; 
-    max-height:460px;
-    overflow-y: auto !important; 
-    overflow-x: auto; 
-    padding-bottom: 15px;
-    padding-right: 10px;
-    width: auto;
-    max-width: 90vw;
+    overflow-y: scroll !important; /* Barra de rolagem vertical fixa */
+    overflow-x: scroll !important; /* Barra de rolagem horizontal fixa */
+    padding-bottom: 25px; 
+    padding-right: 25px;
+    box-sizing: border-box;
   }
    
   .bloco { position:relative; flex:0 0 260px; border:1px solid #2b2b2b; background:#171717; border-radius:10px; padding:12px; }
@@ -254,51 +253,22 @@
   #letreiro-texto-aseguir { pointer-events: none; }
 
   #banner-somente-logo {
-    position: absolute; 
-    top: 120px; 
-    left: 20px; 
-    z-index: 1001;
-    cursor: move;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    resize: both; 
-    width: 80px;   
-    height: 80px; 
-    min-width: 20px;
-    min-height: 20px;
+    position: absolute; top: 120px; left: 20px; z-index: 1001; cursor: move; display: flex; align-items: center;
+    justify-content: center; overflow: hidden; resize: both; width: 80px; height: 80px; min-width: 20px; min-height: 20px;
   }
-  #img-banner-fixo {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    pointer-events: none;
-    display: none;
-  }
+  #img-banner-fixo { width: 100%; height: 100%; object-fit: contain; pointer-events: none; display: none; }
 
-  /* ESTILOS PARA O BOTÃO PISCANTE DE RENOVAÇÃO */
   @keyframes piscarVermelho {
     0% { background-color: #d32f2f; box-shadow: 0 0 5px #ff0000; }
     50% { background-color: #ff1744; box-shadow: 0 0 20px #ff5252; transform: scale(1.02); }
     100% { background-color: #d32f2f; box-shadow: 0 0 5px #ff0000; }
   }
   .btn-renovar-alerta {
-    background-color: #d32f2f;
-    color: white;
-    border: 2px solid #fff;
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-weight: bold;
-    font-size: 11px;
-    cursor: pointer;
-    animation: piscarVermelho 1s infinite;
-    text-transform: uppercase;
-    text-align: center;
-    display: inline-block;
+    background-color: #d32f2f; color: white; border: 2px solid #fff; padding: 5px 12px; border-radius: 6px;
+    font-weight: bold; font-size: 11px; cursor: pointer; animation: piscarVermelho 1s infinite;
+    text-transform: uppercase; text-align: center; display: inline-block;
   }
 
-  /* ESTILOS DO BOTÃO LIGA/DESLIGA (SWITCH) */
   .switch input:checked + .slider { background-color: #2e7d32; }
   .switch input:focus + .slider { box-shadow: 0 0 1px #2e7d32; }
   .switch input:checked + .slider:before { transform: translateX(14px); }
@@ -551,18 +521,16 @@
     <div class="wrap">
       
       <!-- TOPO DIREITO: REINÍCIO, CONTADOR DE DIAS/RENOVAÇÃO, ADMIN E SAIR -->
-      <div id="movel-topo-direito" class="movel" style="top: 20px; right: 20px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
+      <div id="movel-topo-direito" class="movel redimensionavel" style="top: 20px; right: 20px; width: 420px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
           <div style="display: flex; flex-direction: column; align-items: center; margin-right: 5px;">
               <label style="font-size: 10px; color: #ffd700; font-weight: bold; margin-bottom: 2px;">REINÍCIO DIÁRIO:</label>
               <input type="time" id="horarioReinicio" onchange="salvarHorarioReinicio(this.value)" style="background:#000; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px; font-size: 12px; cursor: pointer;">
           </div>
           
-          <!-- CONTADOR DE DIAS / BOTÃO DE RENOVAÇÃO -->
           <div id="contador-plano-container" style="display: flex; flex-direction: column; align-items: center; margin-right: 5px; min-width: 130px;">
-              <!-- Gerenciado dinamicamente via JS -->
           </div>
 
-          <button class="btn-admin" onclick="window.open('admin.html', '_blank')">⚙️ ABRIR ADMIN</button>
+          <button class="btn-admin" onclick="window.open('admin.html', '_blank')">⚙️ ADMIN</button>
           <button onclick="fazerLogout()" style="background:#b71c1c; font-weight: bold;">🚪 SAIR</button>
       </div>
 
@@ -605,32 +573,33 @@
           </div>
         </div>
 
-        <div id="movel-controles-direito" class="movel" style="left: 550px; top: 100px;">
-          <div style="background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333; width: 300px;">
+        <!-- CONTROLES DIREITO (REDIMENSIONÁVEL) -->
+        <div id="movel-controles-direito" class="movel redimensionavel" style="left: 550px; top: 100px; width: 340px;">
+          <div style="background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333; width: 100%; box-sizing: border-box;">
               <label style="font-size:11px; color:#2e7d32; font-weight:bold;">URL DO BRIDGE (NODE.JS):</label>
-              <input type="text" id="bridgeUrl" value="ws://localhost:8080" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:8px; margin:5px 0; border-radius:5px;">
+              <input type="text" id="bridgeUrl" value="ws://localhost:8080" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:8px; margin:5px 0; border-radius:5px; box-sizing: border-box;">
               <div style="display:flex; gap:10px; align-items:center;">
                   <button id="btnStream" onclick="toggleStream()" style="background:#b71c1c; flex:1; font-weight:bold;">🔴 INICIAR TRANSMISSÃO</button>
                   <div id="statusLed" style="width:12px; height:12px; background:#444; border-radius:50%;"></div>
               </div>
           </div>
 
-          <div style="margin-top:15px; display: flex; flex-direction: column; gap: 5px; width: 330px;">
+          <div style="margin-top:15px; display: flex; flex-direction: column; gap: 5px; width: 100%; box-sizing: border-box;">
             <button class="btn-sec" onclick="adicionarBloco('timer')">+ Bloco (Tempo Fixo)</button>
             <button class="btn-sec" onclick="adicionarBloco('movie')">+ Bloco (Filmes)</button>
             <button class="btn-sec" onclick="adicionarBloco('pause')">+ Bloco (Pausa)</button>
-            <button class="btn-sec" onclick="salvarProgramacao()">💾 Salvar</button>
+            <button class="btn-sec" onclick="salvarProgramacao()">💾 Salvar Tudo (Tamanho e Posição)</button>
             <button class="btn-sec" onclick="document.getElementById('fileInput').click()">📂 Carregar</button>
             <input type="file" id="fileInput" style="display:none" accept="application/json" onchange="carregarProgramacao(this)">
           </div>
 
           <!-- CAIXA DE CONFIGURAÇÃO DE BANNERS -->
-          <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 300px; max-height: 400px; overflow-y: auto;">
+          <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 100%; box-sizing: border-box;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS:</label>
             
             <div style="margin-bottom:10px;">
               <label style="font-size:10px; display:block; color:#aaa;">LINK DA LOGO (BANNER FIXO):</label>
-              <input type="text" id="logoUrl" oninput="atualizarLogos(this.value)" placeholder="Cole o link da imagem .png aqui" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:8px; border-radius:5px;">
+              <input type="text" id="logoUrl" oninput="atualizarLogos(this.value)" placeholder="Cole o link da imagem .png aqui" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:8px; border-radius:5px; box-sizing: border-box;">
             </div>
 
             <!-- BLOCO DE CONFIGURAÇÃO: EXIBINDO (ATUAL) -->
@@ -646,22 +615,22 @@
               <div style="display:flex; gap: 10px; margin-bottom:5px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
-                  <input type="number" id="intervaloLetreiro" value="3" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+                  <input type="number" id="intervaloLetreiro" value="3" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
                 </div>
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">DURAÇÃO (seg):</label>
-                  <input type="number" id="duracaoLetreiro" value="20" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+                  <input type="number" id="duracaoLetreiro" value="20" min="1" onchange="reiniciarTimerBanner()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
                 </div>
               </div>
 
               <div style="display:flex; gap: 10px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">COR:</label>
-                  <input type="color" id="corTextoLetreiro" value="#ffd700" onchange="atualizarEstiloLetreiro()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px;">
+                  <input type="color" id="corTextoLetreiro" value="#ffd700" onchange="atualizarEstiloLetreiro()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px; box-sizing: border-box;">
                 </div>
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">FONTE:</label>
-                  <select id="fonteLetreiro" onchange="atualizarEstiloLetreiro()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px;">
+                  <select id="fonteLetreiro" onchange="atualizarEstiloLetreiro()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px; box-sizing: border-box;">
                     <option value="'Segoe UI', Arial, sans-serif">Padrão</option>
                     <option value="Arial, sans-serif">Arial</option>
                     <option value="'Courier New', Courier, monospace">Courier New</option>
@@ -687,22 +656,22 @@
               <div style="display:flex; gap: 10px; margin-bottom:5px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
-                  <input type="number" id="intervaloAseguir" value="3" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+                  <input type="number" id="intervaloAseguir" value="3" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
                 </div>
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">DURAÇÃO (seg):</label>
-                  <input type="number" id="duracaoAseguir" value="20" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px;">
+                  <input type="number" id="duracaoAseguir" value="20" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
                 </div>
               </div>
 
               <div style="display:flex; gap: 10px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">COR:</label>
-                  <input type="color" id="corTextoAseguir" value="#ffffff" onchange="atualizarEstiloAseguir()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px;">
+                  <input type="color" id="corTextoAseguir" value="#ffffff" onchange="atualizarEstiloAseguir()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px; box-sizing: border-box;">
                 </div>
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">FONTE:</label>
-                  <select id="fonteAseguir" onchange="atualizarEstiloAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px;">
+                  <select id="fonteAseguir" onchange="atualizarEstiloAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px; box-sizing: border-box;">
                     <option value="'Segoe UI', Arial, sans-serif">Padrão</option>
                     <option value="Arial, sans-serif">Arial</option>
                     <option value="'Courier New', Courier, monospace">Courier New</option>
@@ -719,10 +688,12 @@
         </div>
       </div>
       
-      <div id="blocos" class="grid movel" style="top: 450px; left: 20px;"></div>
+      <!-- BLOCOS (COM BARRAS DE ROLAGEM LATERAL E INFERIOR) -->
+      <div id="blocos" class="grid movel redimensionavel" style="top: 480px; left: 20px; width: 850px; height: 350px;"></div>
     </div>
 
-    <header id="movel-header" class="movel" style="bottom: 80px; left: 20px; width: 90%;">
+    <!-- GRADE DE PROGRAMAÇÃO (REDIMENSIONÁVEL) -->
+    <header id="movel-header" class="movel redimensionavel" style="bottom: 80px; left: 20px; width: 800px; height: 250px;">
       <h1>📺 Grade de Programação</h1>
       <div id="grade">Carregando programação do administrador...</div>
     </header>
@@ -772,6 +743,9 @@ window.aplicarLayout = function(posicoes) {
       if (posicoes[id].left !== undefined) el.style.left = posicoes[id].left;
       if (posicoes[id].right !== undefined) el.style.right = posicoes[id].right;
       if (posicoes[id].bottom !== undefined) el.style.bottom = posicoes[id].bottom;
+      
+      if (posicoes[id].width !== undefined) el.style.width = posicoes[id].width;
+      if (posicoes[id].height !== undefined) el.style.height = posicoes[id].height;
     }
   });
 }
@@ -938,13 +912,11 @@ function obterNomeASeguir() {
     return nomeASeguir;
 }
 
-// FUNÇÃO GERENCIADORA COM BLOQUEIO MÚTUO (NUNCA APARECEM JUNTOS)
 function gerenciarBannerKBS() {
   let ligado = document.getElementById('toggleLetreiro').checked;
   if (!ligado) return; 
 
   const bannerAseguir = document.getElementById('letreiro-aseguir');
-  // Se o "A SEGUIR" estiver visível agora, pula esta rodada para não sobrepor
   if (bannerAseguir.style.display === 'flex') return;
 
   const b = blocos[idxBloco];
@@ -970,13 +942,11 @@ function gerenciarBannerKBS() {
   }
 }
 
-// FUNÇÃO GERENCIADORA COM BLOQUEIO MÚTUO (NUNCA APARECEM JUNTOS)
 function gerenciarAseguir() {
   let ligado = document.getElementById('toggleAseguir').checked;
   if (!ligado) return; 
 
   const bannerExibindo = document.getElementById('letreiro-kbs-auto');
-  // Se o "EXIBINDO" estiver visível agora, pula esta rodada para não sobrepor
   if (bannerExibindo.style.display === 'flex') return;
 
   const b = blocos[idxBloco];
@@ -1312,7 +1282,16 @@ window.resizePlayer = function(){ const w=document.getElementById('playerWidth')
 window.salvarProgramacao = function(){ 
   const posicoes = {};
   document.querySelectorAll('.movel, #letreiro-kbs-auto, #letreiro-aseguir, #banner-somente-logo').forEach(el => {
-    if(el.id) { posicoes[el.id] = { top: el.style.top, left: el.style.left, right: el.style.right, bottom: el.style.bottom }; }
+    if(el.id) { 
+      posicoes[el.id] = { 
+        top: el.style.top, 
+        left: el.style.left, 
+        right: el.style.right, 
+        bottom: el.style.bottom,
+        width: el.style.width,
+        height: el.style.height
+      }; 
+    }
   });
   posicoes['player-size'] = { width: document.getElementById('playerWidth').value, height: document.getElementById('playerHeight').value };
 
@@ -1410,6 +1389,13 @@ document.addEventListener('mousedown', (e) => {
   if (layoutTravado) return;
   const target = e.target.closest('.movel');
   if (!target || e.target.tagName === 'BUTTON' || e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+  const rect = target.getBoundingClientRect();
+  const isBottomRight = (e.clientX > rect.right - 20) && (e.clientY > rect.bottom - 20);
+  if (target.classList.contains('redimensionavel') && isBottomRight) {
+     return; 
+  }
+
   let shiftX = e.clientX - target.getBoundingClientRect().left; let shiftY = e.clientY - target.getBoundingClientRect().top;
   function moveAt(pageX, pageY) { target.style.left = pageX - shiftX + 'px'; target.style.top = pageY - shiftY + 'px'; }
   function onMouseMove(event) { moveAt(event.pageX, event.pageY); }
@@ -1422,21 +1408,17 @@ const player = document.getElementById('player');
 function limparPlayer() { if (player) { player.controls = false; const shadow = player.shadowRoot; if (shadow) { const loading = shadow.querySelector('.media-loading-indicator'); if (loading) loading.style.display = 'none'; } } }
 setInterval(limparPlayer, 500);
 
-// === NOVO: CONTADOR REGRESSIVO DO BLOCO ===
 let _ultimoBlocoAtivo = -1;
 let _tempoFimPausa = 0;
 
 setInterval(() => {
-    // Se o sistema não iniciou, não faz nada
     if (!sistemaIniciado || blocos.length === 0) return;
     
     const b = blocos[idxBloco];
     if (!b || b.removido) return;
     
-    // Limpa todos os contadores da tela primeiro
     document.querySelectorAll('.contador-regressivo').forEach(el => el.innerHTML = '');
     
-    // Pega o contador apenas do bloco atual que está tocando
     const contadorEl = document.getElementById(`countdown-${idxBloco}`);
     if (!contadorEl) return;
     
@@ -1444,7 +1426,6 @@ setInterval(() => {
     let mostrar = false;
     
     if (b.tipo === 'pause') {
-        // Se acabou de entrar no bloco de pausa, grava a hora que vai acabar
         if (_ultimoBlocoAtivo !== idxBloco) {
             _tempoFimPausa = Date.now() + (b.tempo * 1000);
         }
@@ -1452,10 +1433,8 @@ setInterval(() => {
         mostrar = true;
     } 
     else if (b.tipo === 'movie' && b.arquivos && b.arquivos.length > 0) {
-        // 1. Pega o tempo que falta do vídeo ATUAL
         let restanteAtual = Math.max(0, video.duration - video.currentTime) || 0;
         
-        // 2. Soma o tempo dos PRÓXIMOS vídeos que ainda vão tocar neste ciclo
         let sumOutros = 0;
         let limite = b.limitePorCiclo || 3;
         let countAtual = b._count || 0;
@@ -1470,12 +1449,10 @@ setInterval(() => {
         mostrar = true;
     } 
     else if (b.tipo === 'timer' && b.arquivos && b.arquivos.length > 0) {
-        // No Tempo Fixo, o vídeo troca quando atinge o limite de tempo configurado
         segundosRestantes = Math.max(0, b.tempo - video.currentTime);
         mostrar = true;
     }
 
-    // Só exibe se houver tempo para mostrar
     if (mostrar && segundosRestantes > 0) {
         contadorEl.innerHTML = `⏳ Faltam <span style="color:#ff4d4d; font-weight:900; font-size:12px;">${fmt(segundosRestantes)}</span> para o próximo bloco`;
     }
