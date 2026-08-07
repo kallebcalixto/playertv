@@ -20,6 +20,7 @@
     min-width: 100vw;
     min-height: 101vh;
     position: relative;
+    user-select: none;
   }
 
   .movel {
@@ -223,7 +224,7 @@
   .mini-btn { padding:4px 6px; margin:2px; border:none; border-radius:6px; cursor:pointer; background:#444; color:#fff; font-size:12px; }
   .mini-btn:hover { background:#666; }
 
-  /* ESTILOS DOS LETREIROS COM MÁXIMA QUALIDADE / ANTIALIASING FORÇADO */
+  /* ESTILOS DOS LETREIROS COM MÁXIMA QUALIDADE */
   #letreiro-kbs-auto {
     position: absolute; top: 20px; left: 20px; z-index: 999;
     background: transparent; color: #ffd700; border-left: 5px solid #ffd700;
@@ -236,7 +237,7 @@
   }
   #letreiro-logo-img { 
     height: 28px; width: auto; max-height: 35px; display: none; pointer-events: none; 
-    image-rendering: -webkit-optimize-contrast; /* Força alta nitidez */
+    image-rendering: -webkit-optimize-contrast; 
     image-rendering: high-quality;
   }
   #letreiro-texto-arquivo { pointer-events: none; }
@@ -264,7 +265,7 @@
   }
   #img-banner-fixo { 
     width: 100%; height: 100%; object-fit: contain; pointer-events: none; display: none; 
-    image-rendering: -webkit-optimize-contrast; /* Evita que o navegador borre o banner fixo */
+    image-rendering: -webkit-optimize-contrast; 
     image-rendering: high-quality;
   }
 
@@ -855,8 +856,45 @@ function extrairNomeLimpo(nomeBruto) {
     return nomeLimpo;
 }
 
+function horarioParaSegundos(strHora) {
+    if (!strHora) return 0;
+    const partes = strHora.split(':').map(Number);
+    const h = partes[0] || 0;
+    const m = partes[1] || 0;
+    const s = partes[2] || 0;
+    return h * 3600 + m * 60 + s;
+}
+
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
+    
+    const agora = new Date();
+    const hoje = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
+    const segundosAgora = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
+
+    for (let i = 0; i < blocos.length; i++) {
+        const b = blocos[i];
+        if (b && !b.removido && b.tipo === 'youtube' && b.horaInicio) {
+            let diaMatch = false;
+            if (Array.isArray(b.diaSemana)) { 
+                diaMatch = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); 
+            } else { 
+                diaMatch = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); 
+            }
+            
+            if (diaMatch) {
+                const segundosInicio = horarioParaSegundos(b.horaInicio);
+                const diffSegundos = segundosInicio - segundosAgora;
+                
+                if (diffSegundos >= 0 && diffSegundos <= 600) {
+                    const minRestantes = Math.ceil(diffSegundos / 60);
+                    let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : "Transmissão Ao Vivo");
+                    return `${nomeBloco} (Entra em ${minRestantes} min, às ${b.horaInicio})`;
+                }
+            }
+        }
+    }
+
     const b = blocos[idxBloco];
     if (!b || b.removido) return "";
 
@@ -896,12 +934,14 @@ function obterNomeASeguir() {
 
         let nextB = blocos[nextIdx];
         if (nextB && !nextB.removido) {
-            if (nextB.nome) {
-                nomeASeguir = nextB.nome; 
-            } else if (nextB.tipo === 'youtube') {
-                nomeASeguir = "Transmissão Ao Vivo";
+            if (nextB.tipo === 'youtube') {
+                let nomeBloco = nextB.nome ? nextB.nome : (nextB.m3ulink ? "Transmissão M3U" : "Transmissão Ao Vivo");
+                let horarioStr = nextB.horaInicio ? ` (às ${nextB.horaInicio})` : "";
+                nomeASeguir = `${nomeBloco}${horarioStr}`;
             } else if (nextB.tipo === 'pause') {
-                nomeASeguir = "Pausa Programada";
+                nomeASeguir = nextB.nome ? `Pausa: ${nextB.nome}` : "Pausa Programada";
+            } else if (nextB.nome) {
+                nomeASeguir = nextB.nome;
             } else if (nextB.arquivos && nextB.arquivos.length > 0) {
                 nomeASeguir = extrairNomeLimpo(nextB.arquivos[0].file.name);
             } else {
@@ -950,14 +990,7 @@ function gerenciarAseguir() {
   const bannerExibindo = document.getElementById('letreiro-kbs-auto');
   if (bannerExibindo.style.display === 'flex') return;
 
-  const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-aseguir');
-  
-  if (b && b.tipo === 'youtube') {
-      banner.style.display = 'none'; 
-      return;
-  }
-  
   let nomeAseguir = obterNomeASeguir();
 
   if (nomeAseguir) {
@@ -1128,7 +1161,6 @@ function tocarAtual() {
   
   if (b.tipo === 'youtube') { 
       document.getElementById('letreiro-kbs-auto').style.display = 'none';
-      document.getElementById('letreiro-aseguir').style.display = 'none';
       if (b.ytlink) startYouTubeNow(b); 
       else if (b.m3ulink) startM3UNow(b); 
       return; 
@@ -1140,7 +1172,11 @@ function tocarAtual() {
   video.style.backgroundColor = '#000000';
 
   const novaUrl = b.arquivos[b.arquivoAtual].url;
-  if (video.src !== novaUrl) { video.src = novaUrl; }
+  if (video.src !== novaUrl) { 
+      video.src = novaUrl; 
+  } else {
+      video.load();
+  }
   
   const tempoAlvo = b.progresso[b.arquivoAtual] || 0;
   video.currentTime = tempoAlvo;
@@ -1224,7 +1260,21 @@ window.definirTempo = function(i,v){ blocos[i].tempo=timeToSec(v); atualizarGrad
 window.definirLimite = function(i,v){ blocos[i].limitePorCiclo=parseInt(v); atualizarInfoTempo(i); atualizarGrade(); }
 window.pularArquivo = function(i){ const b=blocos[i]; if(b.arquivos.length>0){ b.arquivoAtual=(b.arquivoAtual+1)%b.arquivos.length; atualizarInfoTempo(i); if(idxBloco===i) tocarAtual(); } }
 window.voltarArquivo = function(i){ const b=blocos[i]; if(b.arquivos.length>0){ b.arquivoAtual=(b.arquivoAtual-1+b.arquivos.length)%b.arquivos.length; atualizarInfoTempo(i); if(idxBloco===i) tocarAtual(); } }
-window.removerBloco = function(i){ blocos[i].removido=true; document.getElementById(`bloco-${i}`).remove(); window.proximoBloco(); }
+
+// FUNÇÃO DE REMOVER BLOCO AJUSTADA PARA NÃO REINICIAR DO ZERO
+window.removerBloco = function(i){ 
+  blocos[i].removido = true; 
+  document.getElementById(`bloco-${i}`).remove(); 
+
+  if (idxBloco === i) {
+    window.proximoBloco();
+  } else if (idxBloco > i) {
+    idxBloco--;
+  }
+  
+  atualizarGrade();
+}
+
 window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTempoSalvo = 0; ytUltimoPlayTimestamp = 0; tocarAtual(); }
 window.proximoBloco = function(){ idxBloco=(idxBloco+1)%blocos.length; tocarAtual(); }
 window.pausar = function(){ video.pause(); }
@@ -1352,7 +1402,12 @@ function onDrag(e) {
     let x = e.clientX - container.left - offsetX; let y = e.clientY - container.top - offsetY; 
     activeElement.style.left = x + 'px'; activeElement.style.top = y + 'px'; 
 }
-function stopDrag() { isDragging = false; activeElement = null; document.removeEventListener('mousemove', onDrag); }
+function stopDrag() { 
+    isDragging = false; 
+    activeElement = null; 
+    document.removeEventListener('mousemove', onDrag); 
+    document.removeEventListener('mouseup', stopDrag);
+}
 
 let mediaRecorder; let socket;
 
@@ -1397,11 +1452,25 @@ document.addEventListener('mousedown', (e) => {
      return; 
   }
 
-  let shiftX = e.clientX - target.getBoundingClientRect().left; let shiftY = e.clientY - target.getBoundingClientRect().top;
-  function moveAt(pageX, pageY) { target.style.left = pageX - shiftX + 'px'; target.style.top = pageY - shiftY + 'px'; }
-  function onMouseMove(event) { moveAt(event.pageX, event.pageY); }
+  let shiftX = e.clientX - target.getBoundingClientRect().left; 
+  let shiftY = e.clientY - target.getBoundingClientRect().top;
+
+  function moveAt(pageX, pageY) { 
+      target.style.left = pageX - shiftX + 'px'; 
+      target.style.top = pageY - shiftY + 'px'; 
+  }
+
+  function onMouseMove(event) { 
+      moveAt(event.pageX, event.pageY); 
+  }
+
+  function onMouseUp() {
+      document.removeEventListener('mousemove', onMouseMove);
+      document.removeEventListener('mouseup', onMouseUp);
+  }
+
   document.addEventListener('mousemove', onMouseMove);
-  document.onmouseup = function() { document.removeEventListener('mousemove', onMouseMove); document.onmouseup = null; };
+  document.addEventListener('mouseup', onMouseUp);
 });
 document.addEventListener('dragstart', (e) => { if (e.target.closest('.movel')) e.preventDefault(); });
 
@@ -1460,6 +1529,14 @@ setInterval(() => {
     
     _ultimoBlocoAtivo = idxBloco;
 }, 1000);
+
+setInterval(() => {
+    if (!sistemaIniciado || blocos.length === 0) return;
+    const b = blocos[idxBloco];
+    if (b && (b.tipo === 'movie' || b.tipo === 'timer') && b.arquivos && b.arquivos.length > 0) {
+        atualizarInfoTempo(idxBloco);
+    }
+}, 60000);
 </script>
 </body>
 </html>
