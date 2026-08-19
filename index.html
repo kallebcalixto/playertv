@@ -1708,7 +1708,7 @@ function startM3UNow(b) {
         hlsInstance = null;
     }
 
-    console.log("Iniciando M3U direto (sem proxy):", b.m3ulink);
+    console.log("Iniciando M3U (Auto-Play corrigido):", b.m3ulink);
 
     if (Hls.isSupported()) {
         hlsInstance = new Hls({
@@ -1717,24 +1717,31 @@ function startM3UNow(b) {
             }
         });
 
-        // URL 100% limpa, direta para o seu Nginx
-        hlsInstance.loadSource(b.m3ulink); 
+        hlsInstance.loadSource(b.m3ulink);
         hlsInstance.attachMedia(video);
         
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
-            video.play().catch((e) => console.log("Aguardando play:", e)); 
+            console.log("Manifesto OK. Forçando play...");
+            video.muted = true; // Inicia mutado para burlar bloqueio do Chrome
+            video.play().then(() => {
+                console.log("Play executado com sucesso! Desmutando...");
+                setTimeout(() => { video.muted = false; }, 800);
+            }).catch((e) => {
+                console.warn("Autoplay impedido, aguardando interação:", e);
+            });
         });
 
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
                 console.error("Erro fatal no HLS:", data);
-                stopM3U();
-                window.proximoBloco();
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = b.m3ulink;
-        video.addEventListener('loadedmetadata', () => video.play());
+        video.muted = true;
+        video.addEventListener('loadedmetadata', () => {
+            video.play().then(() => { setTimeout(() => video.muted = false, 800); });
+        });
     }
 }
 
