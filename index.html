@@ -23,7 +23,6 @@
     user-select: none;
   }
 
-  /* ESTILOS DO RELÓGIO E DA BARRA DE PROGRESSO INTERATIVA */
   #relogio-digital {
     font-family: monospace;
     font-size: 14px;
@@ -54,7 +53,6 @@
     pointer-events: none;
   }
 
-  /* SISTEMA DE SELEÇÃO POR CLIQUE */
   .movel {
     position: absolute !important;
     z-index: 10;
@@ -1355,7 +1353,7 @@ function renderizarBloco(i, bloco){
   }
 
   card.innerHTML = `
-    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':bloco.tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
+    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':blocos[i].tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
     <div class="row"><label>Nome:</label><input type="text" placeholder="Ex: Jaspion" value="${bloco.nome || ''}" onchange="definirNomeBloco(${i}, this.value)" style="width:145px; background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px;"></div>
     <div class="row">
         ${(isTimer||isMovie) ? `
@@ -1717,6 +1715,7 @@ function startM3UNow(b) {
             enableWorker: true, 
             lowLatencyMode: true,
             xhrSetup: function (xhr, url) {
+                xhr.open('GET', url, true);
                 xhr.withCredentials = false;
             }
         });
