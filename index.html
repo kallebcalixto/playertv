@@ -1500,100 +1500,46 @@ async function tocarAtual() {
     const horarioMatch = b.horarios && b.horarios.some(hObj => horaAgora >= hObj.inicio && hObj.fim > horaAgora);
     if (!diaMatch || !horarioMatch) { pularParaProximo(); return; }
   }
-  if (b.tipo === 'youtube') {
-    let diaMatchAdmin = false;
-    if (Array.isArray(b.diaSemana)) { diaMatchAdmin = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
-    else { diaMatchAdmin = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
-    
-    let dentroDoHorarioAdmin = false;
-    if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
-        dentroDoHorarioAdmin = b.horariosAdmin.some(hObj => horaAgora >= (hObj.inicio || "00:00:00") && horaAgora < (hObj.fim || "23:59:59"));
-    } else {
-        dentroDoHorarioAdmin = (horaAgora >= b.horaInicio && horaAgora < b.horaFim);
-    }
-
-    if (!diaMatchAdmin || !dentroDoHorarioAdmin) { pularParaProximo(); return; }
-  }
 
   document.querySelectorAll('.bloco').forEach(el => el.classList.remove('running'));
   clearTimeout(pauseTimer); detachTimers(); 
   
-  if (b.tipo !== 'youtube') {
-    stopM3U(); stopYouTube();
-    ytplayer.style.display = 'none'; video.style.display = 'block';
-  }
-
   const card = document.getElementById(`bloco-${idxBloco}`); 
   if (card) card.classList.add('running');
 
-  if (b.tipo === 'pause') { video.pause(); pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); return; }
+  if (b.tipo === 'pause') { 
+    stopM3U(); stopYouTube();
+    video.pause(); 
+    pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); 
+    return; 
+  }
   
-  // CORREÇÃO APLICADA: Executa M3U independentemente se o bloco veio do Admin/YouTube ou outro local
+  // SE FOR LINK M3U: Executa direto de forma limpa e independente
   if (b.m3ulink) {
-      document.getElementById('letreiro-kbs-auto').style.display = 'none';
-      startM3UNow(b);
-      return;
+    document.getElementById('letreiro-kbs-auto').style.display = 'none';
+    stopYouTube();
+    startM3UNow(b);
+    return;
   }
 
-  if (b.tipo === 'youtube') { 
-      document.getElementById('letreiro-kbs-auto').style.display = 'none';
-      if (b.ytlink) {
-          startYouTubeNow(b);
-      } else if (b.arquivos && b.arquivos.length > 0) {
-          video.style.display = 'block';
-          ytplayer.style.display = 'none';
-          
-          if (b.arquivoAtual >= b.arquivos.length) {
-              b.arquivoAtual = 0;
-          }
-          
-          const arquivoCorrente = b.arquivos[b.arquivoAtual];
-          
-          video.pause();
-          video.removeAttribute('src');
-          video.load();
-          
-          video.src = arquivoCorrente.url;
-          video.load();
-          video.play().catch(() => {});
-          
-          video.onended = () => {
-              b.arquivoAtual++;
-              if (b.arquivoAtual < b.arquivos.length) {
-                  tocarAtual();
-              } else {
-                  b.arquivoAtual = 0;
-                  b._agendadoRodando = false;
-                  
-                  if (blocoAnteriorIdx !== -1) {
-                      idxBloco = blocoAnteriorIdx; 
-                      const progressoSalvo = blocoAnteriorProgresso;
-                      const estavaPausado = blocoAnteriorPaused;
-                      blocoAnteriorIdx = -1;
-                      
-                      video.style.opacity = '0'; video.style.backgroundColor = '#000000';
-                      tocarAtual();
-                      
-                      if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
-                          if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
-                              video.currentTime = progressoSalvo;
-                              if (estavaPausado) video.pause();
-                          }
-                      }
-                  } else {
-                      window.proximoBloco();
-                  }
-              }
-          };
-      }
-      return; 
+  // SE FOR YOUTUBE
+  if (b.tipo === 'youtube' && b.ytlink) {
+    stopM3U();
+    document.getElementById('letreiro-kbs-auto').style.display = 'none';
+    startYouTubeNow(b);
+    return;
   }
   
-  if (b.arquivos.length === 0) { pularParaProximo(); return; }
+  // ARQUIVOS NORMAIS (Dropbox / Nuvem / Locais)
+  stopM3U(); stopYouTube();
+  ytplayer.style.display = 'none'; video.style.display = 'block';
+
+  if (!b.arquivos || b.arquivos.length === 0) { pularParaProximo(); return; }
 
   video.style.opacity = '0';
   video.style.backgroundColor = '#000000';
 
+  if (b.arquivoAtual >= b.arquivos.length) b.arquivoAtual = 0;
   const novaUrl = b.arquivos[b.arquivoAtual].url;
   
   video.pause();
@@ -1717,9 +1663,7 @@ function startM3UNow(b) {
         hlsInstance = new Hls({
             xhrSetup: function (xhr, url) {
                 xhr.withCredentials = false;
-            },
-            enableWorker: false,
-            lowLatencyMode: true
+            }
         });
 
         hlsInstance.loadSource(b.m3ulink);
