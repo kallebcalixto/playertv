@@ -1702,18 +1702,39 @@ function stopYouTube(){
 function startM3UNow(b) {
     video.style.display = 'block';
     ytplayer.style.display = 'none';
+
+    // URL envelopada no proxy do AllOrigins para evitar o erro de CORS
+    const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(b.m3ulink);
+
     if (Hls.isSupported()) {
         if (hlsInstance) stopM3U();
-        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, manifestLoadingMaxRetry: 10, levelLoadingMaxRetry: 10 });
-        hlsInstance.loadSource(b.m3ulink); 
+        
+        hlsInstance = new Hls({ 
+            enableWorker: true, 
+            lowLatencyMode: true,
+            manifestLoadingTimeOut: 20000,
+            levelLoadingTimeOut: 20000
+        });
+
+        hlsInstance.loadSource(proxyUrl); 
         hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
+            video.play().catch(() => {}); 
+        });
+
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
                 switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR: hlsInstance.startLoad(); break;
-                    case Hls.ErrorTypes.MEDIA_ERROR: hlsInstance.recoverMediaError(); break;
-                    default: stopM3U(); window.proximoBloco(); break;
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        hlsInstance.startLoad(); 
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        hlsInstance.recoverMediaError(); 
+                        break;
+                    default:
+                        stopM3U();
+                        window.proximoBloco();
+                        break;
                 }
             }
         });
