@@ -1473,10 +1473,10 @@ function verificarAgendados() {
         tocarAtual();
         
         if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
-          if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
-            video.currentTime = progressoSalvo;
-            if (estavaPausado) video.pause();
-          }
+            if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
+                video.currentTime = progressoSalvo;
+                if (estavaPausado) video.pause();
+            }
         }
       } else { window.proximoBloco(); }
     }
@@ -1708,14 +1708,12 @@ function startM3UNow(b) {
         hlsInstance = null;
     }
 
-    console.log("Iniciando M3U com CORS 100% blindado:", b.m3ulink);
-
     if (Hls.isSupported()) {
         hlsInstance = new Hls({
             xhrSetup: function (xhr, url) {
                 xhr.withCredentials = false;
             },
-            enableWorker: true,
+            enableWorker: false,
             lowLatencyMode: true
         });
 
@@ -1723,7 +1721,6 @@ function startM3UNow(b) {
         hlsInstance.attachMedia(video);
         
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
-            console.log("Manifesto HLS carregado com sucesso!");
             video.muted = true; 
             video.play().then(() => {
                 setTimeout(() => { video.muted = false; }, 800);
@@ -1733,7 +1730,6 @@ function startM3UNow(b) {
         });
 
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
-            console.warn("HLS Error:", data.type, data.details);
             if (data.fatal) {
                 switch (data.type) {
                     case Hls.ErrorTypes.NETWORK_ERROR:
