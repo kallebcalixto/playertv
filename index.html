@@ -1528,12 +1528,17 @@ async function tocarAtual() {
 
   if (b.tipo === 'pause') { video.pause(); pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); return; }
   
+  // CORREÇÃO APLICADA: Executa M3U independentemente se o bloco veio do Admin/YouTube ou outro local
+  if (b.m3ulink) {
+      document.getElementById('letreiro-kbs-auto').style.display = 'none';
+      startM3UNow(b);
+      return;
+  }
+
   if (b.tipo === 'youtube') { 
       document.getElementById('letreiro-kbs-auto').style.display = 'none';
       if (b.ytlink) {
           startYouTubeNow(b);
-      } else if (b.m3ulink) {
-          startM3UNow(b);
       } else if (b.arquivos && b.arquivos.length > 0) {
           video.style.display = 'block';
           ytplayer.style.display = 'none';
