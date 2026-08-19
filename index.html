@@ -1514,7 +1514,7 @@ async function tocarAtual() {
     return; 
   }
   
-  // SE FOR LINK M3U: Executa direto de forma limpa e independente
+  // SE FOR LINK M3U: Utiliza a rotina isolada e otimizada (sem conflitos)
   if (b.m3ulink) {
     document.getElementById('letreiro-kbs-auto').style.display = 'none';
     stopYouTube();
@@ -1650,59 +1650,34 @@ function stopYouTube(){
     ytplayer.src=''; ytplayer.style.display='none'; 
 }
 
+// ROTINA M3U ISOLADA E OTIMIZADA (Idêntica ao player que roda livre no GitHub)
 function startM3UNow(b) {
+    if (video.dataset.currentM3u === b.m3ulink && !video.paused) return;
+    
+    stopM3U();
     video.style.display = 'block';
     ytplayer.style.display = 'none';
-
-    if (hlsInstance) {
-        hlsInstance.destroy();
-        hlsInstance = null;
-    }
+    video.dataset.currentM3u = b.m3ulink;
 
     if (Hls.isSupported()) {
-        hlsInstance = new Hls({
-            xhrSetup: function (xhr, url) {
-                xhr.withCredentials = false;
-            }
-        });
-
+        hlsInstance = new Hls();
         hlsInstance.loadSource(b.m3ulink);
         hlsInstance.attachMedia(video);
-        
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
-            video.muted = true; 
-            video.play().then(() => {
-                setTimeout(() => { video.muted = false; }, 800);
-            }).catch((e) => {
-                console.warn("Play automático impedido:", e);
-            });
-        });
-
-        hlsInstance.on(Hls.Events.ERROR, function (event, data) {
-            if (data.fatal) {
-                switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        hlsInstance.startLoad();
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        hlsInstance.recoverMediaError();
-                        break;
-                    default:
-                        hlsInstance.destroy();
-                        break;
-                }
-            }
-        });
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => video.play().catch(()=>{}));
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
         video.src = b.m3ulink;
-        video.muted = true;
-        video.addEventListener('loadedmetadata', () => {
-            video.play().then(() => { setTimeout(() => video.muted = false, 800); });
-        });
+        video.play().catch(()=>{});
     }
 }
 
-function stopM3U() { if (hlsInstance) { hlsInstance.detachMedia(); hlsInstance.destroy(); hlsInstance = null; } video.pause(); video.removeAttribute('src'); video.load(); }
+function stopM3U() { 
+    if (hlsInstance) { hlsInstance.destroy(); hlsInstance = null; } 
+    video.pause(); 
+    video.src = ''; 
+    delete video.dataset.currentM3u;
+    video.load(); 
+}
+
 function detachTimers(){ if(timeupdateHandler) video.removeEventListener('timeupdate', timeupdateHandler); video.onended=null; }
 function proximoArquivoMesmoBloco(){ 
   const b=blocos[idxBloco]; b.arquivoAtual=(b.arquivoAtual+1)%b.arquivos.length; 
