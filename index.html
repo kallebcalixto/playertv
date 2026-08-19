@@ -1122,7 +1122,6 @@ function horarioParaSegundos(strHora) {
     return h * 3600 + m * 60 + s;
 }
 
-// LOGICA APRIMORADA: PRIORIDADE TOTAL AO PRÓXIMO EVENTO DE HOJE (ADMIN, FIXO, FILMES E ARQUIVOS)
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
     
@@ -1133,7 +1132,6 @@ function obterNomeASeguir() {
     let proximoEvento = null;
     let menorDiferenca = Infinity;
 
-    // 1. Varredura rigorosa em todos os blocos programados para hoje (Admin, Fixo, Filmes com horário)
     for (let i = 0; i < blocos.length; i++) {
         const b = blocos[i];
         if (!b || b.removido) continue;
@@ -1164,7 +1162,6 @@ function obterNomeASeguir() {
                     const segundosInicio = horarioParaSegundos(hObj.inicio);
                     let diff = segundosInicio - segundosAgora;
                     
-                    // Prioriza estritamente o evento que vai acontecer hoje mais próximo de agora
                     if (diff > 0 && diff < menorDiferenca) {
                         menorDiferenca = diff;
                         let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : (b.ytlink ? "Transmissão YouTube" : "Bloco Programado"));
@@ -1180,13 +1177,11 @@ function obterNomeASeguir() {
         return proximoEvento;
     }
 
-    // 2. Se não houver horário específico iminente, busca o próximo arquivo da playlist do bloco atual ou do próximo bloco
     const b = blocos[idxBloco];
     if (b && !b.removido) {
         if (b.arquivos && b.arquivos.length > 0) {
             let nextFileIdx = (b.arquivoAtual + 1) % b.arquivos.length;
             if (b.tipo === 'movie' && ((b._count || 0) + 1 >= (b.limitePorCiclo || 3))) {
-                // Se o bloco de filmes vai atingir o limite, pula pro próximo bloco geral
                 let nextIdx = (idxBloco + 1) % blocos.length;
                 let nextB = blocos[nextIdx];
                 if (nextB && !nextB.removido) {
@@ -1710,22 +1705,48 @@ function stopYouTube(){
 
 function startM3UNow(b) {
     video.style.display = 'block';
+    ytplayer.style.display = 'none';
+
+    if (hlsInstance) {
+        hlsInstance.destroy();
+        hlsInstance = null;
+    }
+
     if (Hls.isSupported()) {
-        if (hlsInstance) stopM3U();
-        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, manifestLoadingMaxRetry: 10, levelLoadingMaxRetry: 10 });
-        hlsInstance.loadSource(b.m3ulink); hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+        hlsInstance = new Hls({ 
+            enableWorker: true, 
+            lowLatencyMode: true,
+            xhrSetup: function (xhr, url) {
+                xhr.withCredentials = false;
+            }
+        });
+
+        hlsInstance.loadSource(b.m3ulink); 
+        hlsInstance.attachMedia(video);
+        
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
+            video.play().catch((e) => console.log("Play aguardando interação:", e)); 
+        });
+
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
                 switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR: hlsInstance.startLoad(); break;
-                    case Hls.ErrorTypes.MEDIA_ERROR: hlsInstance.recoverMediaError(); break;
-                    default: stopM3U(); window.proximoBloco(); break;
+                    case Hls.ErrorTypes.NETWORK_ERROR: 
+                        hlsInstance.startLoad(); 
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR: 
+                        hlsInstance.recoverMediaError(); 
+                        break;
+                    default: 
+                        stopM3U(); 
+                        window.proximoBloco(); 
+                        break;
                 }
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = b.m3ulink; video.addEventListener('loadedmetadata', () => video.play());
+        video.src = b.m3ulink; 
+        video.addEventListener('loadedmetadata', () => video.play());
     }
 }
 
