@@ -1708,40 +1708,32 @@ function startM3UNow(b) {
         hlsInstance = null;
     }
 
-    // Proxy CORS aplicado para contornar o bloqueio de segurança do navegador
-    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(b.m3ulink);
+    console.log("Iniciando M3U direto (sem proxy):", b.m3ulink);
 
     if (Hls.isSupported()) {
-        hlsInstance = new Hls({ 
-            enableWorker: true, 
-            lowLatencyMode: true
+        hlsInstance = new Hls({
+            xhrSetup: function (xhr, url) {
+                xhr.withCredentials = false;
+            }
         });
 
-        hlsInstance.loadSource(proxyUrl); 
+        // URL 100% limpa, direta para o seu Nginx
+        hlsInstance.loadSource(b.m3ulink); 
         hlsInstance.attachMedia(video);
         
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
-            video.play().catch((e) => console.log("Play aguardando interação:", e)); 
+            video.play().catch((e) => console.log("Aguardando play:", e)); 
         });
 
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
-                switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR: 
-                        hlsInstance.startLoad(); 
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR: 
-                        hlsInstance.recoverMediaError(); 
-                        break;
-                    default: 
-                        stopM3U(); 
-                        window.proximoBloco(); 
-                        break;
-                }
+                console.error("Erro fatal no HLS:", data);
+                stopM3U();
+                window.proximoBloco();
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = proxyUrl; 
+        video.src = b.m3ulink;
         video.addEventListener('loadedmetadata', () => video.play());
     }
 }
