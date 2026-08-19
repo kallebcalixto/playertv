@@ -1153,7 +1153,7 @@ function obterNomeASeguir() {
             listaHorariosParaChecar = b.horariosAdmin;
         } else if (b.tipo === 'timer' && Array.isArray(b.horarios)) {
             listaHorariosParaChecar = b.horarios;
-        }
+      }
 
         let diaMatch = false;
         if (b.tipo === 'youtube') {
@@ -1228,7 +1228,7 @@ function gerenciarBannerKBS() {
     document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
     const urlLogo = document.getElementById('logoUrl').value;
     atualizarLogos(urlLogo);
-    
+     
     atualizarEstiloLetreiro();
     banner.style.display = 'flex';
 
@@ -1252,7 +1252,7 @@ function gerenciarAseguir() {
     document.getElementById('letreiro-texto-aseguir').innerText = "A SEGUIR: " + nomeAseguir;
     const urlLogo = document.getElementById('logoUrl').value;
     atualizarLogos(urlLogo);
-    
+     
     atualizarEstiloAseguir();
     banner.style.display = 'flex';
 
@@ -1311,7 +1311,7 @@ window.definirNomeBloco = function(i, valor) {
 window.carregarArquivosNuvem = function(i, textoLinks) {
     blocos[i].cloudLinksInput = textoLinks;
     const linhas = textoLinks.split('\n').map(l => l.trim()).filter(l => l !== '');
-    
+     
     let listaCloud = linhas.map((linkUrl, indexUrl) => {
         let urlFinal = linkUrl;
         let nomeExtraido = "";
@@ -1358,42 +1358,42 @@ function renderizarBloco(i, bloco){
   const nomeDisplay = bloco.nome ? ` - ${bloco.nome}` : '';
   
   if (!bloco.horarios) {
-      bloco.horarios = [{inicio: "00:00:00", fim: "00:00:00"}];
+    bloco.horarios = [{inicio: "00:00:00", fim: "00:00:00"}];
   }
 
   card.innerHTML = `
     <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':blocos[i].tipo==='movie'?'Filmes':blocos[i].tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
     <div class="row"><label>Nome:</label><input type="text" placeholder="Ex: Jaspion" value="${bloco.nome || ''}" onchange="definirNomeBloco(${i}, this.value)" style="width:145px; background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px;"></div>
     <div class="row">
-        ${(isTimer||isMovie) ? `
-          <div style="width:100%; margin-bottom:5px;">
-            <label style="font-size:11px; color:#4fc3f7;">📁 Arquivo Interno (Pasta):</label>
-            <input type="file" webkitdirectory directory multiple onchange="carregarArquivos(${i}, this.files)" style="font-size:11px; margin-top:3px;">
-          </div>
-          <div style="width:100%; margin-bottom:8px;">
-            <label style="font-size:11px; color:#ffd700;">☁️ Links Nuvem / Dropbox (Um link por linha):</label>
-            <textarea rows="3" placeholder="Cole os links do Dropbox aqui..." oninput="carregarArquivosNuvem(${i}, this.value)" style="width:100%; background:#000; color:#fff; border:1px solid #444; font-size:11px; box-sizing:border-box; margin-top:3px; resize:vertical;">${bloco.cloudLinksInput || ''}</textarea>
-          </div>
-        `:''}
-        ${isTimer ? `
-         <label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">
-         <div style="margin-top:10px; width:100%; background:#222; padding:8px; border-radius:5px;"><label>Dias da Semana:</label><br><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size:11px;">
-            ${['domingo','segunda','terca','quarta','quinta','sexta','sabado'].map(d => `<label style="cursor:pointer;"><input type="checkbox" ${bloco.diasSelecionados && bloco.diasSelecionados.includes(d) ? 'checked' : ''} onchange="toggleDia(${i}, '${d}')"> ${d.charAt(0).toUpperCase() + d.slice(1)}</label>`).join('')}
-         </div></div>
-         <div style="margin-top:10px; width:100%;">
-             <label style="display:block; margin-bottom:5px;">Horários Programados:</label>
-             <div id="lista-horarios-${i}">
-                 ${(bloco.horarios).map((h, idx) => `
-                     <div style="display:flex; gap:5px; margin-bottom:5px;">
-                         <input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${idx}, 'inicio', this.value)" style="width:85px;">
-                         <input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${idx}, 'fim', this.value)" style="width:85px;">
-                         <button onclick="removeHora(${i}, ${idx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px; cursor:pointer;">X</button>
-                     </div>
-                  `).join('')}
-             </div>
-             <button onclick="addHora(${i})" style="font-size:11px; width:100%; margin-top:5px; background:#1976d2; color:white; border-radius:5px; padding:5px; cursor:pointer;">+ Adicionar Horário</button>
-         </div>
+      ${(isTimer||isMovie) ? `
+        <div style="width:100%; margin-bottom:5px;">
+          <label style="font-size:11px; color:#4fc3f7;">📁 Arquivo Interno (Pasta):</label>
+          <input type="file" webkitdirectory directory multiple onchange="carregarArquivos(${i}, this.files)" style="font-size:11px; margin-top:3px;">
+        </div>
+        <div style="width:100%; margin-bottom:8px;">
+          <label style="font-size:11px; color:#ffd700;">☁️ Links Nuvem / Dropbox (Um link por linha):</label>
+          <textarea rows="3" placeholder="Cole os links do Dropbox aqui..." oninput="carregarArquivosNuvem(${i}, this.value)" style="width:100%; background:#000; color:#fff; border:1px solid #444; font-size:11px; box-sizing:border-box; margin-top:3px; resize:vertical;">${bloco.cloudLinksInput || ''}</textarea>
+        </div>
       `:''}
+      ${isTimer ? `
+       <label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">
+       <div style="margin-top:10px; width:100%; background:#222; padding:8px; border-radius:5px;"><label>Dias da Semana:</label><br><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size:11px;">
+         ${['domingo','segunda','terca','quarta','quinta','sexta','sabado'].map(d => `<label style="cursor:pointer;"><input type="checkbox" ${bloco.diasSelecionados && bloco.diasSelecionados.includes(d) ? 'checked' : ''} onchange="toggleDia(${i}, '${d}')"> ${d.charAt(0).toUpperCase() + d.slice(1)}</label>`).join('')}
+       </div></div>
+       <div style="margin-top:10px; width:100%;">
+           <label style="display:block; margin-bottom:5px;">Horários Programados:</label>
+           <div id="lista-horarios-${i}">
+               ${(bloco.horarios).map((h, idx) => `
+                   <div style="display:flex; gap:5px; margin-bottom:5px;">
+                       <input type="time" step="1" value="${h.inicio}" oninput="editHora(${i}, ${idx}, 'inicio', this.value)" style="width:85px;">
+                       <input type="time" step="1" value="${h.fim}" oninput="editHora(${i}, ${idx}, 'fim', this.value)" style="width:85px;">
+                       <button onclick="removeHora(${i}, ${idx})" style="background:#b71c1c; padding:2px 5px; border-radius:4px; cursor:pointer;">X</button>
+                   </div>
+               `).join('')}
+           </div>
+           <button onclick="addHora(${i})" style="font-size:11px; width:100%; margin-top:5px; background:#1976d2; color:white; border-radius:5px; padding:5px; cursor:pointer;">+ Adicionar Horário</button>
+       </div>
+    `:''}
       ${bloco.tipo==='pause' ? `<label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">`:''}
       ${isMovie ? `<label>Limite:</label><input type="number" min="1" value="${bloco.limitePorCiclo||3}" onchange="definirLimite(${i}, this.value)"><div style="margin-top:8px; width:100%;"><button class="mini-btn" onclick="voltarArquivo(${i})">⏮ Voltar vídeo</button><button class="mini-btn" onclick="pularArquivo(${i})">⏭ Pular vídeo</button></div>`:''}
       ${isYoutubeM3U ? `<label>Início:</label><input type="time" step="1" value="${bloco.horaInicio||''}" disabled><label>Fim:</label><input type="time" step="1" value="${bloco.horaFim||''}" disabled>`:''}
@@ -1433,7 +1433,7 @@ function verificarAgendados() {
         let diaMatch = false;
         if (Array.isArray(b.diaSemana)) { diaMatch = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
         else { diaMatch = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
-        
+         
         let dentroDoHorario = false;
         if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
             dentroDoHorario = b.horariosAdmin.some(hObj => horaAtual >= (hObj.inicio || "00:00:00") && horaAtual < (hObj.fim || "23:59:59"));
@@ -1464,7 +1464,7 @@ function verificarAgendados() {
             blocoAnteriorPaused = video.paused;
         }
       }
-      
+       
       b.arquivoAtual = 0;
 
       blocos.forEach(bl => bl._agendadoRodando = false);
@@ -1479,10 +1479,10 @@ function verificarAgendados() {
         const progressoSalvo = blocoAnteriorProgresso;
         const estavaPausado = blocoAnteriorPaused;
         blocoAnteriorIdx = -1; 
-        
+         
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
-        
+         
         if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
           if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
             video.currentTime = progressoSalvo;
@@ -1515,7 +1515,7 @@ async function tocarAtual() {
     let diaMatchAdmin = false;
     if (Array.isArray(b.diaSemana)) { diaMatchAdmin = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
     else { diaMatchAdmin = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
-    
+     
     let dentroDoHorarioAdmin = false;
     if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
         dentroDoHorarioAdmin = b.horariosAdmin.some(hObj => horaAgora >= (hObj.inicio || "00:00:00") && horaAgora < (hObj.fim || "23:59:59"));
@@ -1548,21 +1548,21 @@ async function tocarAtual() {
       } else if (b.arquivos && b.arquivos.length > 0) {
           video.style.display = 'block';
           ytplayer.style.display = 'none';
-          
+           
           if (b.arquivoAtual >= b.arquivos.length) {
               b.arquivoAtual = 0;
           }
-          
+           
           const arquivoCorrente = b.arquivos[b.arquivoAtual];
-          
+           
           video.pause();
           video.removeAttribute('src');
           video.load();
-          
+           
           video.src = arquivoCorrente.url;
           video.load();
           video.play().catch(() => {});
-          
+           
           video.onended = () => {
               b.arquivoAtual++;
               if (b.arquivoAtual < b.arquivos.length) {
@@ -1570,26 +1570,26 @@ async function tocarAtual() {
               } else {
                   b.arquivoAtual = 0;
                   b._agendadoRodando = false;
-                  
+                   
                   if (blocoAnteriorIdx !== -1) {
                       idxBloco = blocoAnteriorIdx; 
                       const progressoSalvo = blocoAnteriorProgresso;
                       const estavaPausado = blocoAnteriorPaused;
                       blocoAnteriorIdx = -1;
-                      
+                       
                       video.style.opacity = '0'; video.style.backgroundColor = '#000000';
                       tocarAtual();
-                      
+                       
                       if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
                           if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
                               video.currentTime = progressoSalvo;
                               if (estavaPausado) video.pause();
                           }
-                    }
-                } else {
-                    window.proximoBloco();
-                }
-            }
+                      }
+                  } else {
+                      window.proximoBloco();
+                  }
+              }
           };
       }
       return; 
@@ -1648,10 +1648,10 @@ setInterval(() => {
 
 setInterval(() => {
     if (!sistemaIniciado || blocos.length === 0) return;
-    
+     
     const b = blocos[idxBloco];
     if (b && b.tipo !== 'youtube' && !b.removido) {
-        
+         
         if (video.paused && !video.ended && video.src !== "") {
             if (video.currentTime > 0) {
                 b.progresso[b.arquivoAtual] = video.currentTime;
@@ -1796,10 +1796,18 @@ function startM3UNow(b) {
     if (Hls.isSupported()) {
         if (hlsInstance) stopM3U();
         
-        // CORREÇÃO CORS APLICADA AQUI APENAS:
         const linkComProxy = "https://corsproxy.io/?" + encodeURIComponent(b.m3ulink);
 
-        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, manifestLoadingMaxRetry: 10, levelLoadingMaxRetry: 10 });
+        hlsInstance = new Hls({ 
+            enableWorker: true, 
+            lowLatencyMode: true, 
+            manifestLoadingMaxRetry: 10, 
+            levelLoadingMaxRetry: 10,
+            xhrSetup: function (xhr, url) {
+                xhr.setRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+            }
+        });
+
         hlsInstance.loadSource(linkComProxy); 
         hlsInstance.attachMedia(video);
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
