@@ -23,7 +23,6 @@
     user-select: none;
   }
 
-  /* SISTEMA DE SELEÇÃO POR CLIQUE */
   .movel {
     position: absolute !important;
     z-index: 10;
@@ -185,7 +184,6 @@
   #player { object-fit: contain; display:block; }
   #ytplayer { display:none; }
   
-  /* ESTILOS DA BARRA DE PROGRESSO CUSTOMIZADA FORA DO PLAYER */
   #container-progresso {
     width: 500px;
     margin-top: 6px;
@@ -502,7 +500,7 @@
           Object.keys(dadosFirebase).forEach(i => {
               const d = dadosFirebase[i];
               const blocoAntigo = blocos.find(b => b._firebaseIndex === i);
-              
+               
               let linksArr = [];
               if (Array.isArray(d.storage)) {
                   linksArr = d.storage.filter(l => l && l.trim() !== "");
@@ -563,13 +561,13 @@
               });
           });
           blocos = [...blocosManter, ...novosBlocosAgendados];
-          
+           
           if (idPlaying && idPlaying.startsWith('fb_')) {
               const fbId = idPlaying.split('_')[1];
               const novoIndex = blocos.findIndex(b => b._firebaseIndex === fbId);
               if (novoIndex !== -1) { idxBloco = novoIndex; }
           }
-          
+           
           blocosEl.innerHTML = '';
           blocos.forEach((b, i) => {
               renderizarBloco(i, b);
@@ -615,16 +613,15 @@
 
   <div id="conteudo-player" style="display:none;">
     <div class="wrap">
-      
+       
       <div id="movel-topo-direito" class="movel redimensionavel" style="top: 20px; right: 20px; width: 490px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
-          <!-- RELÓGIO DIGITAL -->
           <div id="relogio-digital" style="font-family: monospace; font-size: 14px; color: #00ffcc; font-weight: bold; background: #000; padding: 4px 8px; border-radius: 4px; border: 1px solid #333; min-width: 75px; text-align: center;">00:00:00</div>
 
           <div style="display: flex; flex-direction: column; align-items: center; margin-right: 2px;">
               <label style="font-size: 9px; color: #ffd700; font-weight: bold; margin-bottom: 2px;">REINÍCIO:</label>
               <input type="time" id="horarioReinicio" onchange="salvarHorarioReinicio(this.value)" style="background:#000; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 4px; font-size: 11px; cursor: pointer;">
           </div>
-          
+           
           <div id="contador-plano-container" style="display: flex; flex-direction: column; align-items: center; margin-right: 2px; min-width: 110px;">
           </div>
 
@@ -634,7 +631,7 @@
 
       <div class="top">
         <div id="movel-area-player" class="movel" style="left: 20px; top: 100px; z-index: 5000 !important;">
-          
+           
           <div id="letreiro-kbs-auto" class="movel">
             <img id="letreiro-logo-img" src="">
             <span id="letreiro-texto-arquivo"></span>
@@ -654,11 +651,9 @@
             <video id="vid-novo-banner-independente" class="video-overlay-dinamico" autoplay muted loop playsinline></video>
           </div>
 
-          <!-- PLAYER SEM CONTROLES NATIVOS -->
           <video id="player" playsinline></video>
           <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
 
-          <!-- BARRA DE AVANÇO PERSONALIZADA FORA DO PLAYER (LOGO ABAIXO) -->
           <div id="container-progresso">
             <input type="range" id="barra-progresso" value="0" step="0.1">
             <div style="display: flex; justify-content: space-between; font-size: 10px; color: #aaa; margin-top: 2px;">
@@ -666,7 +661,7 @@
               <span id="tempo-total">00:00</span>
             </div>
           </div>
-          
+           
           <div class="controls">
             <button class="btn-pri" onclick="iniciar()">▶ Iniciar</button>
             <button onclick="pausar()">⏸ Pausar</button>
@@ -675,7 +670,6 @@
             <button onclick="proximoBloco()">⏭ Próximo bloco</button>
           </div>
 
-          <!-- CONTROLE DE LARGURA E ALTURA DO PLAYER -->
           <div class="player-resize-controls" style="margin-top:10px; display:flex; gap:8px; align-items:center;">
             <label style="color:#eee; font-size:14px;">Largura:</label>
             <input type="number" id="playerWidth" value="500" style="width:70px; background:#222; color:#fff; border:1px solid #444; padding:4px; border-radius:4px;">
@@ -706,7 +700,7 @@
 
           <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 100%; box-sizing: border-box;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS (ANTIGOS):</label>
-            
+             
             <div style="margin-bottom:10px;">
               <label style="font-size:10px; display:block; color:#aaa;">LINK DA LOGO (BANNER FIXO):</label>
               <input type="text" id="logoUrl" oninput="atualizarLogos(this.value)" placeholder="Cole o link da imagem .png aqui" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:8px; border-radius:5px; box-sizing: border-box;">
@@ -720,7 +714,7 @@
                   <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#b71c1c; transition:.4s; border-radius:20px;"></span>
                 </label>
               </div>
-              
+               
               <div style="display:flex; gap: 10px; margin-bottom:5px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
@@ -748,67 +742,67 @@
                     <option value="'Comic Sans MS', cursive, sans-serif">Comic</option>
                     <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
                   </select>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top:10px; border-top: 1px solid #444; padding-top: 10px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom:5px;">
+                <label style="font-size:10px; color:#4fc3f7; font-weight:bold;">MOSTRAR "A SEGUIR":</label>
+                <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
+                  <input type="checkbox" id="toggleAseguir" checked onchange="reiniciarTimerAseguir()" style="opacity:0; width:0; height:0;">
+                  <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#b71c1c; transition:.4s; border-radius:20px;"></span>
+                </label>
+              </div>
+               
+              <div style="display:flex; gap: 10px; margin-bottom:5px;">
+                <div style="flex:1;">
+                  <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
+                  <input type="number" id="intervaloAseguir" value="3" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
+                </div>
+                <div style="flex:1;">
+                  <label style="font-size:10px; display:block; color:#aaa;">DURAÇÃO (seg):</label>
+                  <input type="number" id="duracaoAseguir" value="20" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
+                </div>
+              </div>
+
+              <div style="display:flex; gap: 10px;">
+                <div style="flex:1;">
+                  <label style="font-size:10px; display:block; color:#aaa;">COR:</label>
+                  <input type="color" id="corTextoAseguir" value="#ffffff" onchange="atualizarEstiloAseguir()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px; box-sizing: border-box;">
+                </div>
+                <div style="flex:1;">
+                  <label style="font-size:10px; display:block; color:#aaa;">FONTE:</label>
+                  <select id="fonteAseguir" onchange="atualizarEstiloAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px; box-sizing: border-box;">
+                    <option value="'Segoe UI', Arial, sans-serif">Padrão</option>
+                    <option value="Arial, sans-serif">Arial</option>
+                    <option value="'Courier New', Courier, monospace">Courier New</option>
+                    <option value="'Impact', sans-serif">Impact</option>
+                    <option value="'Times New Roman', Times, serif">Times</option>
+                    <option value="'Comic Sans MS', cursive, sans-serif">Comic</option>
+                    <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
+                  </select>
+                </div>
               </div>
             </div>
           </div>
 
-          <div style="margin-top:10px; border-top: 1px solid #444; padding-top: 10px;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom:5px;">
-              <label style="font-size:10px; color:#4fc3f7; font-weight:bold;">MOSTRAR "A SEGUIR":</label>
-              <label class="switch" style="position:relative; display:inline-block; width:34px; height:20px;">
-                <input type="checkbox" id="toggleAseguir" checked onchange="reiniciarTimerAseguir()" style="opacity:0; width:0; height:0;">
-                <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#b71c1c; transition:.4s; border-radius:20px;"></span>
-              </label>
-            </div>
-            
-            <div style="display:flex; gap: 10px; margin-bottom:5px;">
-              <div style="flex:1;">
-                <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
-                <input type="number" id="intervaloAseguir" value="3" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
-              </div>
-              <div style="flex:1;">
-                <label style="font-size:10px; display:block; color:#aaa;">DURAÇÃO (seg):</label>
-                <input type="number" id="duracaoAseguir" value="20" min="1" onchange="reiniciarTimerAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; border-radius:5px; box-sizing: border-box;">
-              </div>
-            </div>
-
-            <div style="display:flex; gap: 10px;">
-              <div style="flex:1;">
-                <label style="font-size:10px; display:block; color:#aaa;">COR:</label>
-                <input type="color" id="corTextoAseguir" value="#ffffff" onchange="atualizarEstiloAseguir()" style="width:100%; height:28px; background:#000; border:1px solid #444; border-radius:5px; cursor:pointer; padding: 2px; box-sizing: border-box;">
-              </div>
-              <div style="flex:1;">
-                <label style="font-size:10px; display:block; color:#aaa;">FONTE:</label>
-                <select id="fonteAseguir" onchange="atualizarEstiloAseguir()" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:5px; height:28px; border-radius:5px; box-sizing: border-box;">
-                  <option value="'Segoe UI', Arial, sans-serif">Padrão</option>
-                  <option value="Arial, sans-serif">Arial</option>
-                  <option value="'Courier New', Courier, monospace">Courier New</option>
-                  <option value="'Impact', sans-serif">Impact</option>
-                  <option value="'Times New Roman', Times, serif">Times</option>
-                  <option value="'Comic Sans MS', cursive, sans-serif">Comic</option>
-                  <option value="'Trebuchet MS', sans-serif">Trebuchet</option>
-                </select>
-              </div>
-            </div>
+          <div style="margin-top:15px; background:#181818; padding:15px; border-radius:8px; border:1px solid #444; width: 100%; box-sizing: border-box;">
+            <label style="font-size:11px; color:#00e676; display:block; margin-bottom:8px; font-weight:bold;">OVERLAYS / BANNERS COM HORÁRIO:</label>
+            <div id="novos-banners-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;"></div>
+            <button type="button" onclick="adicionarNovoBannerItem()" style="background:#00e676; color:#000; font-size:11px; font-weight:bold; padding:6px; width:100%;">+ Adicionar Overlay / Banner</button>
           </div>
-        </div>
 
-        <div style="margin-top:15px; background:#181818; padding:15px; border-radius:8px; border:1px solid #444; width: 100%; box-sizing: border-box;">
-          <label style="font-size:11px; color:#00e676; display:block; margin-bottom:8px; font-weight:bold;">OVERLAYS / BANNERS COM HORÁRIO:</label>
-          <div id="novos-banners-container" style="display:flex; flex-direction:column; gap:10px; margin-bottom:10px;"></div>
-          <button type="button" onclick="adicionarNovoBannerItem()" style="background:#00e676; color:#000; font-size:11px; font-weight:bold; padding:6px; width:100%;">+ Adicionar Overlay / Banner</button>
         </div>
-
       </div>
+       
+      <div id="blocos" class="grid movel redimensionavel" style="top: 480px; left: 20px; width: 850px; height: 350px;"></div>
     </div>
-    
-    <div id="blocos" class="grid movel redimensionavel" style="top: 480px; left: 20px; width: 850px; height: 350px;"></div>
-  </div>
 
-  <header id="movel-header" class="movel redimensionavel" style="bottom: 80px; left: 20px; width: 800px; height: 250px;">
-    <h1>📺 Grade de Programação</h1>
-    <div id="grade">Carregando programação do administrador...</div>
-  </header>
+    <header id="movel-header" class="movel redimensionavel" style="bottom: 80px; left: 20px; width: 800px; height: 250px;">
+      <h1>📺 Grade de Programação</h1>
+      <div id="grade">Carregando programação do administrador...</div>
+    </header>
   </div>
 
 <script>
@@ -836,7 +830,6 @@ let timerOcultarBanner = null;
 let timerAseguirAtivo = null;
 let timerOcultarAseguir = null;
 
-// RELÓGIO EM TEMPO REAL
 setInterval(() => {
     const relogioEl = document.getElementById('relogio-digital');
     if (relogioEl) {
@@ -867,7 +860,7 @@ window.aplicarLayout = function(posicoes) {
       if (posicoes[id].left !== undefined) el.style.left = posicoes[id].left;
       if (posicoes[id].right !== undefined) el.style.right = posicoes[id].right;
       if (posicoes[id].bottom !== undefined) el.style.bottom = posicoes[id].bottom;
-      
+       
       if (posicoes[id].width !== undefined) el.style.width = posicoes[id].width;
       if (posicoes[id].height !== undefined) el.style.height = posicoes[id].height;
     }
@@ -1031,7 +1024,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const inputReinicio = document.getElementById('horarioReinicio');
         if (inputReinicio) inputReinicio.value = horarioSalvo;
     }
-    
+     
     const layoutSalvo = localStorage.getItem('kbs_layout');
     if (layoutSalvo) {
         window.aplicarLayout(JSON.parse(layoutSalvo));
@@ -1092,7 +1085,7 @@ function atualizarLogos(url) {
 window.reiniciarTimerBanner = function() {
     if (timerBannerAtivo) clearInterval(timerBannerAtivo);
     if (timerOcultarBanner) clearTimeout(timerOcultarBanner);
-    
+     
     let ligado = document.getElementById('toggleLetreiro').checked;
     if (!ligado) {
         document.getElementById('letreiro-kbs-auto').style.display = 'none';
@@ -1105,7 +1098,7 @@ window.reiniciarTimerBanner = function() {
 window.reiniciarTimerAseguir = function() {
     if (timerAseguirAtivo) clearInterval(timerAseguirAtivo);
     if (timerOcultarAseguir) clearTimeout(timerOcultarAseguir);
-    
+     
     let ligado = document.getElementById('toggleAseguir').checked;
     if (!ligado) {
         document.getElementById('letreiro-aseguir').style.display = 'none';
@@ -1136,7 +1129,7 @@ function horarioParaSegundos(strHora) {
 
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
-    
+     
     const agora = new Date();
     const hoje = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
     const segundosAgora = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
@@ -1153,7 +1146,7 @@ function obterNomeASeguir() {
             listaHorariosParaChecar = b.horariosAdmin;
         } else if (b.tipo === 'timer' && Array.isArray(b.horarios)) {
             listaHorariosParaChecar = b.horarios;
-      }
+        }
 
         let diaMatch = false;
         if (b.tipo === 'youtube') {
@@ -1171,7 +1164,7 @@ function obterNomeASeguir() {
                 if (hObj && hObj.inicio) {
                     const segundosInicio = horarioParaSegundos(hObj.inicio);
                     let diff = segundosInicio - segundosAgora;
-                    
+                     
                     if (diff > 0 && diff < menorDiferenca) {
                         menorDiferenca = diff;
                         let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : (b.ytlink ? "Transmissão YouTube" : "Bloco Programado"));
@@ -1181,7 +1174,7 @@ function obterNomeASeguir() {
                 }
             });
         }
-      }
+    }
 
     if (proximoEvento) {
         return proximoEvento;
@@ -1217,12 +1210,12 @@ function gerenciarBannerKBS() {
 
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
-  
+   
   if (b && b.tipo === 'youtube') {
       banner.style.display = 'none'; 
       return;
   }
-  
+   
   if (b && b.arquivos && b.arquivos[b.arquivoAtual]) {
     let nomeLimpo = extrairNomeLimpo(b.arquivos[b.arquivoAtual].file.name);
     document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
@@ -1268,7 +1261,7 @@ function anyPlayableBlocks(){ return blocos.some(b=>b && !b.removido); }
 
 window.adicionarBloco = function(tipo){
   if (tipo === 'youtube') return alert('Blocos YouTube / M3U são gerenciados apenas pelo painel Admin.');
-  
+   
   let nomeSugerido = prompt("Digite o nome deste bloco para organizar (ex: Filmes Ação, Jaspion, etc):", "");
   if (nomeSugerido === null) return; 
 
@@ -1356,7 +1349,7 @@ function renderizarBloco(i, bloco){
   const isMovie = bloco.tipo === 'movie';
   const isYoutubeM3U = bloco.tipo === 'youtube';
   const nomeDisplay = bloco.nome ? ` - ${bloco.nome}` : '';
-  
+   
   if (!bloco.horarios) {
     bloco.horarios = [{inicio: "00:00:00", fim: "00:00:00"}];
   }
@@ -1528,7 +1521,7 @@ async function tocarAtual() {
 
   document.querySelectorAll('.bloco').forEach(el => el.classList.remove('running'));
   clearTimeout(pauseTimer); detachTimers(); 
-  
+   
   if (b.tipo !== 'youtube') {
     stopM3U(); stopYouTube();
     ytplayer.style.display = 'none'; video.style.display = 'block';
@@ -1538,7 +1531,7 @@ async function tocarAtual() {
   if (card) card.classList.add('running');
 
   if (b.tipo === 'pause') { video.pause(); pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); return; }
-  
+   
   if (b.tipo === 'youtube') { 
       document.getElementById('letreiro-kbs-auto').style.display = 'none';
       if (b.ytlink) {
@@ -1594,21 +1587,21 @@ async function tocarAtual() {
       }
       return; 
   }
-  
+   
   if (b.arquivos.length === 0) { pularParaProximo(); return; }
 
   video.style.opacity = '0';
   video.style.backgroundColor = '#000000';
 
   const novaUrl = b.arquivos[b.arquivoAtual].url;
-  
+   
   video.pause();
   video.removeAttribute('src');
   video.load();
 
   video.src = novaUrl; 
   video.load();
-  
+   
   let tempoAlvo = b.progresso[b.arquivoAtual] || 0;
   const recuperacaoSalva = localStorage.getItem('kbs_estado_reconexao');
   if (recuperacaoSalva) {
@@ -1625,7 +1618,7 @@ async function tocarAtual() {
   if (tempoAlvo === 0) { video.style.opacity = '1'; }
   video.play().catch(() => {});
   attachHandlersFor(b); 
-  
+   
   gerenciarBannerKBS();
   gerenciarAseguir();
 }
@@ -1706,7 +1699,7 @@ window.atualizarInfoTempo = function(i) {
 window.carregarArquivos = async function(i, fileList){
   const validExtensions = ['.mp4', '.webm', '.ogg', '.mkv', '.mov', '.gif'];
   const files = Array.from(fileList).filter(f => validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
-  
+   
   if (blocos[i] && blocos[i].arquivos) {
       blocos[i].arquivos.forEach(arq => {
           if (arq.url && arq.url.startsWith('blob:')) {
@@ -1741,7 +1734,7 @@ window.removerBloco = function(i){
   } else if (idxBloco > i) {
     idxBloco--;
   }
-  
+   
   atualizarGrade();
 }
 
@@ -1804,7 +1797,9 @@ function startM3UNow(b) {
             manifestLoadingMaxRetry: 10, 
             levelLoadingMaxRetry: 10,
             xhrSetup: function (xhr, url) {
-                xhr.setRequestHeader('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)');
+                // Força o cabeçalho de origem e o agente do navegador compatível com o domínio kbstvpro
+                xhr.setRequestHeader('Origin', 'https://live.kbstvpro.com.br');
+                xhr.setRequestHeader('Referer', 'https://live.kbstvpro.com.br/');
             }
         });
 
@@ -1988,7 +1983,7 @@ document.addEventListener('mousedown', (e) => {
   if (layoutTravado) return;
 
   const target = e.target.closest('.movel');
-  
+   
   if (!target) {
     document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
     return;
@@ -2028,7 +2023,6 @@ document.addEventListener('mousedown', (e) => {
 
 document.addEventListener('dragstart', (e) => { if (e.target.closest('.movel')) e.preventDefault(); });
 
-// SCRIPTS DA BARRA DE PROGRESSO CUSTOMIZADA FORA DO PLAYER
 const barraProgresso = document.getElementById('barra-progresso');
 const tempoAtualEl = document.getElementById('tempo-atual');
 const tempoTotalEl = document.getElementById('tempo-total');
