@@ -23,6 +23,7 @@
     user-select: none;
   }
 
+  /* ESTILOS DO RELÓGIO E DA BARRA DE PROGRESSO INTERATIVA */
   #relogio-digital {
     font-family: monospace;
     font-size: 14px;
@@ -53,6 +54,7 @@
     pointer-events: none;
   }
 
+  /* SISTEMA DE SELEÇÃO POR CLIQUE */
   .movel {
     position: absolute !important;
     z-index: 10;
@@ -620,6 +622,7 @@
     <div class="wrap">
       
       <div id="movel-topo-direito" class="movel redimensionavel" style="top: 20px; right: 20px; width: 450px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
+          <!-- Relógio Digital inserido aqui perto do Admin -->
           <div id="relogio-digital">00:00:00</div>
 
           <div style="display: flex; flex-direction: column; align-items: center; margin-right: 5px;">
@@ -659,6 +662,7 @@
           <video id="player" controls playsinline></video>
           <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
           
+          <!-- BARRA DE PROGRESSO LOGO ABAIXO DO PLAYER -->
           <div id="barra-progresso-container" onclick="pularTempoVideo(event)">
              <div id="barra-progresso-fill"></div>
           </div>
@@ -1118,6 +1122,7 @@ function horarioParaSegundos(strHora) {
     return h * 3600 + m * 60 + s;
 }
 
+// LOGICA APRIMORADA: PRIORIDADE TOTAL AO PRÓXIMO EVENTO DE HOJE (ADMIN, FIXO, FILMES E ARQUIVOS)
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
     
@@ -1128,6 +1133,7 @@ function obterNomeASeguir() {
     let proximoEvento = null;
     let menorDiferenca = Infinity;
 
+    // 1. Varredura rigorosa em todos os blocos programados para hoje (Admin, Fixo, Filmes com horário)
     for (let i = 0; i < blocos.length; i++) {
         const b = blocos[i];
         if (!b || b.removido) continue;
@@ -1158,6 +1164,7 @@ function obterNomeASeguir() {
                     const segundosInicio = horarioParaSegundos(hObj.inicio);
                     let diff = segundosInicio - segundosAgora;
                     
+                    // Prioriza estritamente o evento que vai acontecer hoje mais próximo de agora
                     if (diff > 0 && diff < menorDiferenca) {
                         menorDiferenca = diff;
                         let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : (b.ytlink ? "Transmissão YouTube" : "Bloco Programado"));
@@ -1173,11 +1180,13 @@ function obterNomeASeguir() {
         return proximoEvento;
     }
 
+    // 2. Se não houver horário específico iminente, busca o próximo arquivo da playlist do bloco atual ou do próximo bloco
     const b = blocos[idxBloco];
     if (b && !b.removido) {
         if (b.arquivos && b.arquivos.length > 0) {
             let nextFileIdx = (b.arquivoAtual + 1) % b.arquivos.length;
             if (b.tipo === 'movie' && ((b._count || 0) + 1 >= (b.limitePorCiclo || 3))) {
+                // Se o bloco de filmes vai atingir o limite, pula pro próximo bloco geral
                 let nextIdx = (idxBloco + 1) % blocos.length;
                 let nextB = blocos[nextIdx];
                 if (nextB && !nextB.removido) {
@@ -1367,7 +1376,7 @@ function renderizarBloco(i, bloco){
         ${isTimer ? `
          <label>Tempo:</label><input type="time" step="1" value="${fmt(bloco.tempo||300)}" oninput="definirTempo(${i}, this.value)">
          <div style="margin-top:10px; width:100%; background:#222; padding:8px; border-radius:5px;"><label>Dias da Semana:</label><br><div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px; font-size:11px;">
-           ${['domingo','segunda','terca','quarta','quinta','sexta','sabado'].map(d => `<label style="cursor:pointer;"><input type="checkbox" ${bloco.diasSelecionados && bloco.diasSelecionados.includes(d) ? 'checked' : ''} onchange="toggleDia(${i}, '${d}')"> ${d.charAt(0).toUpperCase() + d.slice(1)}</label>`).join('')}
+            ${['domingo','segunda','terca','quarta','quinta','sexta','sabado'].map(d => `<label style="cursor:pointer;"><input type="checkbox" ${bloco.diasSelecionados && bloco.diasSelecionados.includes(d) ? 'checked' : ''} onchange="toggleDia(${i}, '${d}')"> ${d.charAt(0).toUpperCase() + d.slice(1)}</label>`).join('')}
          </div></div>
          <div style="margin-top:10px; width:100%;">
              <label style="display:block; margin-bottom:5px;">Horários Programados:</label>
@@ -1701,60 +1710,26 @@ function stopYouTube(){
 
 function startM3UNow(b) {
     video.style.display = 'block';
-    ytplayer.style.display = 'none';
-
-    // URL envelopada no proxy do AllOrigins para evitar o erro de CORS
-    const proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(b.m3ulink);
-
     if (Hls.isSupported()) {
         if (hlsInstance) stopM3U();
-        
-        hlsInstance = new Hls({ 
-            enableWorker: true, 
-            lowLatencyMode: true,
-            manifestLoadingTimeOut: 20000,
-            levelLoadingTimeOut: 20000
-        });
-
-        hlsInstance.loadSource(proxyUrl); 
-        hlsInstance.attachMedia(video);
-        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
-            video.play().catch(() => {}); 
-        });
-
+        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, manifestLoadingMaxRetry: 10, levelLoadingMaxRetry: 10 });
+        hlsInstance.loadSource(b.m3ulink); hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
             if (data.fatal) {
                 switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        hlsInstance.startLoad(); 
-                        break;
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        hlsInstance.recoverMediaError(); 
-                        break;
-                    default:
-                        stopM3U();
-                        window.proximoBloco();
-                        break;
+                    case Hls.ErrorTypes.NETWORK_ERROR: hlsInstance.startLoad(); break;
+                    case Hls.ErrorTypes.MEDIA_ERROR: hlsInstance.recoverMediaError(); break;
+                    default: stopM3U(); window.proximoBloco(); break;
                 }
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = b.m3ulink; 
-        video.addEventListener('loadedmetadata', () => video.play());
+        video.src = b.m3ulink; video.addEventListener('loadedmetadata', () => video.play());
     }
 }
 
-function stopM3U() { 
-    if (hlsInstance) { 
-        hlsInstance.detachMedia(); 
-        hlsInstance.destroy(); 
-        hlsInstance = null; 
-    } 
-    video.pause(); 
-    video.removeAttribute('src'); 
-    video.load(); 
-}
-
+function stopM3U() { if (hlsInstance) { hlsInstance.detachMedia(); hlsInstance.destroy(); hlsInstance = null; } video.pause(); video.removeAttribute('src'); video.load(); }
 function detachTimers(){ if(timeupdateHandler) video.removeEventListener('timeupdate', timeupdateHandler); video.onended=null; }
 function proximoArquivoMesmoBloco(){ 
   const b=blocos[idxBloco]; b.arquivoAtual=(b.arquivoAtual+1)%b.arquivos.length; 
