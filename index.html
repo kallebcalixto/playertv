@@ -23,7 +23,6 @@
     user-select: none;
   }
 
-  /* ESTILOS DO RELÓGIO E DA BARRA DE PROGRESSO INTERATIVA */
   #relogio-digital {
     font-family: monospace;
     font-size: 14px;
@@ -54,7 +53,6 @@
     pointer-events: none;
   }
 
-  /* SISTEMA DE SELEÇÃO POR CLIQUE */
   .movel {
     position: absolute !important;
     z-index: 10;
@@ -206,7 +204,7 @@
   .wrap { max-width:1200px; margin:0 auto; padding:20px; }
   .top { display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap; justify-content:center; }
 
-  #player, #ytplayer, #m3u-player { 
+  #player, #ytplayer { 
     width:500px; height:280px; 
     background:#000 !important;
     border:1px solid #333; border-radius:8px; 
@@ -219,8 +217,6 @@
 
   #player { object-fit: contain; display:block; }
   #ytplayer { display:none; }
-  #m3u-player { display:none; border:none; }
-
   .controls { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
   button { padding:8px 12px; border:none; border-radius:8px; cursor:pointer; background:#2f2f2f; color:#fff; }
   button:hover { background:#454545; }
@@ -583,7 +579,7 @@
               if (i === idxBloco && b._agendadoRodando) {
                   const card = document.getElementById(`bloco-${i}`);
                   if (card) card.classList.add('running');
-                }
+              }
           });
           atualizarGrade();
           if (idxBloco >= blocos.length) idxBloco = 0;
@@ -622,7 +618,7 @@
 
   <div id="conteudo-player" style="display:none;">
     <div class="wrap">
-       
+      
       <div id="movel-topo-direito" class="movel redimensionavel" style="top: 20px; right: 20px; width: 450px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
           <div id="relogio-digital">00:00:00</div>
 
@@ -630,7 +626,7 @@
               <label style="font-size: 10px; color: #ffd700; font-weight: bold; margin-bottom: 2px;">REINÍCIO DIÁRIO:</label>
               <input type="time" id="horarioReinicio" onchange="salvarHorarioReinicio(this.value)" style="background:#000; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px; font-size: 12px; cursor: pointer;">
           </div>
-           
+          
           <div id="contador-plano-container" style="display: flex; flex-direction: column; align-items: center; margin-right: 5px; min-width: 130px;">
           </div>
 
@@ -640,7 +636,7 @@
 
       <div class="top">
         <div id="movel-area-player" class="movel" style="left: 20px; top: 100px; z-index: 5000 !important;">
-           
+          
           <div id="letreiro-kbs-auto" class="movel">
             <img id="letreiro-logo-img" src="">
             <span id="letreiro-texto-arquivo"></span>
@@ -662,10 +658,9 @@
 
           <video id="player" controls playsinline></video>
           <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
-          <iframe id="m3u-player" allow="autoplay; fullscreen"></iframe>
-           
+          
           <div id="barra-progresso-container" onclick="pularTempoVideo(event)">
-              <div id="barra-progresso-fill"></div>
+             <div id="barra-progresso-fill"></div>
           </div>
 
           <div class="controls">
@@ -706,7 +701,7 @@
 
           <div style="margin-top:15px; background:#222; padding:15px; border-radius:8px; border:1px solid #333; width: 100%; box-sizing: border-box;">
             <label style="font-size:11px; color:#ffd700; display:block; margin-bottom:5px; font-weight:bold;">CONFIGURAÇÃO DE BANNERS (ANTIGOS):</label>
-             
+            
             <div style="margin-bottom:10px;">
               <label style="font-size:10px; display:block; color:#aaa;">LINK DA LOGO (BANNER FIXO):</label>
               <input type="text" id="logoUrl" oninput="atualizarLogos(this.value)" placeholder="Cole o link da imagem .png aqui" style="width:100%; background:#000; border:1px solid #444; color:#fff; font-size:12px; padding:8px; border-radius:5px; box-sizing: border-box;">
@@ -720,7 +715,7 @@
                   <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#b71c1c; transition:.4s; border-radius:20px;"></span>
                 </label>
               </div>
-               
+              
               <div style="display:flex; gap: 10px; margin-bottom:5px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
@@ -760,7 +755,7 @@
                   <span class="slider" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#b71c1c; transition:.4s; border-radius:20px;"></span>
                 </label>
               </div>
-               
+              
               <div style="display:flex; gap: 10px; margin-bottom:5px;">
                 <div style="flex:1;">
                   <label style="font-size:10px; display:block; color:#aaa;">INTERVALO (min):</label>
@@ -801,7 +796,7 @@
 
         </div>
       </div>
-       
+      
       <div id="blocos" class="grid movel redimensionavel" style="top: 480px; left: 20px; width: 850px; height: 350px;"></div>
     </div>
 
@@ -814,7 +809,6 @@
 <script>
 const video = document.getElementById('player');
 const ytplayer = document.getElementById('ytplayer');
-const m3uPlayer = document.getElementById('m3u-player');
 const gradeEl = document.getElementById('grade');
 const blocosEl = document.getElementById('blocos');
 
@@ -825,6 +819,7 @@ let pauseTimer = null;
 let blocoAnteriorIdx = -1;
 let blocoAnteriorProgresso = 0;
 let blocoAnteriorPaused = false;
+let hlsInstance = null;
 let sistemaIniciado = false;
 
 let ytTempoSalvo = 0;
@@ -855,7 +850,7 @@ window.aplicarLayout = function(posicoes) {
       if (posicoes[id].left !== undefined) el.style.left = posicoes[id].left;
       if (posicoes[id].right !== undefined) el.style.right = posicoes[id].right;
       if (posicoes[id].bottom !== undefined) el.style.bottom = posicoes[id].bottom;
-       
+      
       if (posicoes[id].width !== undefined) el.style.width = posicoes[id].width;
       if (posicoes[id].height !== undefined) el.style.height = posicoes[id].height;
     }
@@ -1019,7 +1014,7 @@ window.addEventListener('DOMContentLoaded', () => {
         const inputReinicio = document.getElementById('horarioReinicio');
         if (inputReinicio) inputReinicio.value = horarioSalvo;
     }
-     
+    
     const layoutSalvo = localStorage.getItem('kbs_layout');
     if (layoutSalvo) {
         window.aplicarLayout(JSON.parse(layoutSalvo));
@@ -1081,7 +1076,7 @@ function atualizarLogos(url) {
 window.reiniciarTimerBanner = function() {
     if (timerBannerAtivo) clearInterval(timerBannerAtivo);
     if (timerOcultarBanner) clearTimeout(timerOcultarBanner);
-     
+    
     let ligado = document.getElementById('toggleLetreiro').checked;
     if (!ligado) {
         document.getElementById('letreiro-kbs-auto').style.display = 'none';
@@ -1094,7 +1089,7 @@ window.reiniciarTimerBanner = function() {
 window.reiniciarTimerAseguir = function() {
     if (timerAseguirAtivo) clearInterval(timerAseguirAtivo);
     if (timerOcultarAseguir) clearTimeout(timerOcultarAseguir);
-     
+    
     let ligado = document.getElementById('toggleAseguir').checked;
     if (!ligado) {
         document.getElementById('letreiro-aseguir').style.display = 'none';
@@ -1125,7 +1120,7 @@ function horarioParaSegundos(strHora) {
 
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
-     
+    
     const agora = new Date();
     const hoje = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
     const segundosAgora = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
@@ -1162,7 +1157,7 @@ function obterNomeASeguir() {
                 if (hObj && hObj.inicio) {
                     const segundosInicio = horarioParaSegundos(hObj.inicio);
                     let diff = segundosInicio - segundosAgora;
-                     
+                    
                     if (diff > 0 && diff < menorDiferenca) {
                         menorDiferenca = diff;
                         let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : (b.ytlink ? "Transmissão YouTube" : "Bloco Programado"));
@@ -1211,18 +1206,18 @@ function gerenciarBannerKBS() {
 
   const b = blocos[idxBloco];
   const banner = document.getElementById('letreiro-kbs-auto');
-   
+  
   if (b && b.tipo === 'youtube') {
       banner.style.display = 'none'; 
       return;
   }
-   
+  
   if (b && b.arquivos && b.arquivos[b.arquivoAtual]) {
     let nomeLimpo = extrairNomeLimpo(b.arquivos[b.arquivoAtual].file.name);
     document.getElementById('letreiro-texto-arquivo').innerText = "EXIBINDO: " + nomeLimpo;
     const urlLogo = document.getElementById('logoUrl').value;
     atualizarLogos(urlLogo);
-     
+    
     atualizarEstiloLetreiro();
     banner.style.display = 'flex';
 
@@ -1246,7 +1241,7 @@ function gerenciarAseguir() {
     document.getElementById('letreiro-texto-aseguir').innerText = "A SEGUIR: " + nomeAseguir;
     const urlLogo = document.getElementById('logoUrl').value;
     atualizarLogos(urlLogo);
-     
+    
     atualizarEstiloAseguir();
     banner.style.display = 'flex';
 
@@ -1262,7 +1257,7 @@ function anyPlayableBlocks(){ return blocos.some(b=>b && !b.removido); }
 
 window.adicionarBloco = function(tipo){
   if (tipo === 'youtube') return alert('Blocos YouTube / M3U são gerenciados apenas pelo painel Admin.');
-   
+  
   let nomeSugerido = prompt("Digite o nome deste bloco para organizar (ex: Filmes Ação, Jaspion, etc):", "");
   if (nomeSugerido === null) return; 
 
@@ -1305,7 +1300,7 @@ window.definirNomeBloco = function(i, valor) {
 window.carregarArquivosNuvem = function(i, textoLinks) {
     blocos[i].cloudLinksInput = textoLinks;
     const linhas = textoLinks.split('\n').map(l => l.trim()).filter(l => l !== '');
-     
+    
     let listaCloud = linhas.map((linkUrl, indexUrl) => {
         let urlFinal = linkUrl;
         let nomeExtraido = "";
@@ -1350,7 +1345,7 @@ function renderizarBloco(i, bloco){
   const isMovie = bloco.tipo === 'movie';
   const isYoutubeM3U = bloco.tipo === 'youtube';
   const nomeDisplay = bloco.nome ? ` - ${bloco.nome}` : '';
-   
+  
   if (!bloco.horarios) {
       bloco.horarios = [{inicio: "00:00:00", fim: "00:00:00"}];
   }
@@ -1427,7 +1422,7 @@ function verificarAgendados() {
         let diaMatch = false;
         if (Array.isArray(b.diaSemana)) { diaMatch = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
         else { diaMatch = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
-         
+        
         let dentroDoHorario = false;
         if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
             dentroDoHorario = b.horariosAdmin.some(hObj => horaAtual >= (hObj.inicio || "00:00:00") && horaAtual < (hObj.fim || "23:59:59"));
@@ -1458,7 +1453,7 @@ function verificarAgendados() {
             blocoAnteriorPaused = video.paused;
         }
       }
-       
+      
       b.arquivoAtual = 0;
 
       blocos.forEach(bl => bl._agendadoRodando = false);
@@ -1473,10 +1468,10 @@ function verificarAgendados() {
         const progressoSalvo = blocoAnteriorProgresso;
         const estavaPausado = blocoAnteriorPaused;
         blocoAnteriorIdx = -1; 
-         
+        
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
-         
+        
         if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
           if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
             video.currentTime = progressoSalvo;
@@ -1509,7 +1504,7 @@ async function tocarAtual() {
     let diaMatchAdmin = false;
     if (Array.isArray(b.diaSemana)) { diaMatchAdmin = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
     else { diaMatchAdmin = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
-     
+    
     let dentroDoHorarioAdmin = false;
     if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
         dentroDoHorarioAdmin = b.horariosAdmin.some(hObj => horaAgora >= (hObj.inicio || "00:00:00") && horaAgora < (hObj.fim || "23:59:59"));
@@ -1522,17 +1517,17 @@ async function tocarAtual() {
 
   document.querySelectorAll('.bloco').forEach(el => el.classList.remove('running'));
   clearTimeout(pauseTimer); detachTimers(); 
-   
+  
   if (b.tipo !== 'youtube') {
     stopM3U(); stopYouTube();
-    ytplayer.style.display = 'none'; m3uPlayer.style.display = 'none'; video.style.display = 'block';
+    ytplayer.style.display = 'none'; video.style.display = 'block';
   }
 
   const card = document.getElementById(`bloco-${idxBloco}`); 
   if (card) card.classList.add('running');
 
   if (b.tipo === 'pause') { video.pause(); pauseTimer = setTimeout(() => window.proximoBloco(), b.tempo * 1000); return; }
-   
+  
   if (b.tipo === 'youtube') { 
       document.getElementById('letreiro-kbs-auto').style.display = 'none';
       if (b.ytlink) {
@@ -1542,22 +1537,21 @@ async function tocarAtual() {
       } else if (b.arquivos && b.arquivos.length > 0) {
           video.style.display = 'block';
           ytplayer.style.display = 'none';
-          m3uPlayer.style.display = 'none';
-           
+          
           if (b.arquivoAtual >= b.arquivos.length) {
               b.arquivoAtual = 0;
           }
-           
+          
           const arquivoCorrente = b.arquivos[b.arquivoAtual];
-           
+          
           video.pause();
           video.removeAttribute('src');
           video.load();
-           
+          
           video.src = arquivoCorrente.url;
           video.load();
           video.play().catch(() => {});
-           
+          
           video.onended = () => {
               b.arquivoAtual++;
               if (b.arquivoAtual < b.arquivos.length) {
@@ -1565,16 +1559,16 @@ async function tocarAtual() {
               } else {
                   b.arquivoAtual = 0;
                   b._agendadoRodando = false;
-                   
+                  
                   if (blocoAnteriorIdx !== -1) {
                       idxBloco = blocoAnteriorIdx; 
                       const progressoSalvo = blocoAnteriorProgresso;
                       const estavaPausado = blocoAnteriorPaused;
                       blocoAnteriorIdx = -1;
-                       
+                      
                       video.style.opacity = '0'; video.style.backgroundColor = '#000000';
                       tocarAtual();
-                       
+                      
                       if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
                           if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
                               video.currentTime = progressoSalvo;
@@ -1589,27 +1583,27 @@ async function tocarAtual() {
       }
       return; 
   }
-   
+  
   if (b.arquivos.length === 0) { pularParaProximo(); return; }
 
   video.style.opacity = '0';
   video.style.backgroundColor = '#000000';
 
   const novaUrl = b.arquivos[b.arquivoAtual].url;
-   
+  
   video.pause();
   video.removeAttribute('src');
   video.load();
 
   video.src = novaUrl; 
   video.load();
-   
+  
   const tempoAlvo = b.progresso[b.arquivoAtual] || 0;
   video.currentTime = tempoAlvo;
   if (tempoAlvo === 0) { video.style.opacity = '1'; }
   video.play().catch(() => {});
   attachHandlersFor(b); 
-   
+  
   gerenciarBannerKBS();
   gerenciarAseguir();
 }
@@ -1642,7 +1636,7 @@ window.atualizarInfoTempo = function(i) {
 window.carregarArquivos = async function(i, fileList){
   const validExtensions = ['.mp4', '.webm', '.ogg', '.mkv', '.mov', '.gif'];
   const files = Array.from(fileList).filter(f => validExtensions.some(ext => f.name.toLowerCase().endsWith(ext)));
-   
+  
   if (blocos[i] && blocos[i].arquivos) {
       blocos[i].arquivos.forEach(arq => {
           if (arq.url && arq.url.startsWith('blob:')) {
@@ -1677,7 +1671,7 @@ window.removerBloco = function(i){
   } else if (idxBloco > i) {
     idxBloco--;
   }
-   
+  
   atualizarGrade();
 }
 
@@ -1688,7 +1682,7 @@ window.retomar = function(){ video.play(); }
 
 function startYouTubeNow(b) {
     if (video) { video.pause(); }
-    ytplayer.style.display = 'block'; video.style.display = 'none'; m3uPlayer.style.display = 'none'; 
+    ytplayer.style.display = 'block'; video.style.display = 'none'; 
     const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); 
     if(id) {
        let startParam = ytTempoSalvo > 0 ? `&start=${Math.floor(ytTempoSalvo)}` : '';
@@ -1706,15 +1700,38 @@ function stopYouTube(){
 }
 
 function startM3UNow(b) {
-    video.style.display = 'none';
+    video.style.display = 'block';
     ytplayer.style.display = 'none';
-    m3uPlayer.style.display = 'block';
-    m3uPlayer.src = `https://live.kbstvpro.com.br/player.html?url=${encodeURIComponent(b.m3ulink)}`;
+    if (Hls.isSupported()) {
+        if (hlsInstance) stopM3U();
+        hlsInstance = new Hls({ enableWorker: true, lowLatencyMode: true, manifestLoadingMaxRetry: 10, levelLoadingMaxRetry: 10 });
+        hlsInstance.loadSource(b.m3ulink); 
+        hlsInstance.attachMedia(video);
+        hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { video.play().catch(() => {}); });
+        hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+            if (data.fatal) {
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR: hlsInstance.startLoad(); break;
+                    case Hls.ErrorTypes.MEDIA_ERROR: hlsInstance.recoverMediaError(); break;
+                    default: stopM3U(); window.proximoBloco(); break;
+                }
+            }
+        });
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = b.m3ulink; 
+        video.addEventListener('loadedmetadata', () => video.play());
+    }
 }
 
 function stopM3U() { 
-    m3uPlayer.src = '';
-    m3uPlayer.style.display = 'none'; 
+    if (hlsInstance) { 
+        hlsInstance.detachMedia(); 
+        hlsInstance.destroy(); 
+        hlsInstance = null; 
+    } 
+    video.pause(); 
+    video.removeAttribute('src'); 
+    video.load(); 
 }
 
 function detachTimers(){ if(timeupdateHandler) video.removeEventListener('timeupdate', timeupdateHandler); video.onended=null; }
@@ -1731,8 +1748,6 @@ window.resizePlayer = function(){
     video.style.height = h + 'px'; 
     ytplayer.style.width = w + 'px'; 
     ytplayer.style.height = h + 'px'; 
-    m3uPlayer.style.width = w + 'px';
-    m3uPlayer.style.height = h + 'px';
 
     const barraContainer = document.getElementById('barra-progresso-container');
     if (barraContainer) {
@@ -1743,11 +1758,11 @@ window.resizePlayer = function(){
 window.pularTempoVideo = function(event) {
     const barraContainer = document.getElementById('barra-progresso-container');
     if (!barraContainer || video.duration <= 0) return;
-     
+    
     const rect = barraContainer.getBoundingClientRect();
     const clickX = event.clientX - rect.left;
     const larguraTotal = rect.width;
-     
+    
     const porcentagem = Math.max(0, Math.min(1, clickX / larguraTotal));
     video.currentTime = porcentagem * video.duration;
 }
@@ -1796,7 +1811,7 @@ window.carregarProgramacao = function(input){
   const reader = new FileReader(); 
   reader.onload = e => { 
     const data = JSON.parse(e.target.result); 
-     
+    
     if (Array.isArray(data)) {
         blocos = data;
     } else {
@@ -1811,7 +1826,7 @@ window.carregarProgramacao = function(input){
             localStorage.setItem('kbs_novos_banners_data', JSON.stringify(data.novosBanners));
         }
     }
-     
+    
     blocosEl.innerHTML=""; 
     blocos.forEach((b,i)=>renderizarBloco(i,b)); 
     atualizarGrade(); 
@@ -1897,7 +1912,7 @@ document.addEventListener('mousedown', (e) => {
   if (layoutTravado) return;
 
   const target = e.target.closest('.movel');
-   
+  
   if (!target) {
     document.querySelectorAll('.movel').forEach(el => el.classList.remove('selecionado'));
     return;
@@ -1946,18 +1961,18 @@ let _tempoFimPausa = 0;
 
 setInterval(() => {
     if (!sistemaIniciado || blocos.length === 0) return;
-     
+    
     const b = blocos[idxBloco];
     if (!b || b.removido) return;
-     
+    
     document.querySelectorAll('.contador-regressivo').forEach(el => el.innerHTML = '');
-     
+    
     const contadorEl = document.getElementById(`countdown-${idxBloco}`);
     if (!contadorEl) return;
-     
+    
     let segundosRestantes = 0;
     let mostrar = false;
-     
+    
     if (b.tipo === 'pause') {
         if (_ultimoBlocoAtivo !== idxBloco) {
             _tempoFimPausa = Date.now() + (b.tempo * 1000);
@@ -1967,17 +1982,17 @@ setInterval(() => {
     } 
     else if (b.tipo === 'movie' && b.arquivos && b.arquivos.length > 0) {
         let restanteAtual = Math.max(0, video.duration - video.currentTime) || 0;
-         
+        
         let sumOutros = 0;
         let limite = b.limitePorCiclo || 3;
         let countAtual = b._count || 0;
         let start = (b.arquivoAtual + 1) % b.arquivos.length;
-         
+        
         for (let j = 0; j < limite - countAtual - 1; j++) {
             let idx = (start + j) % b.arquivos.length;
             if (b.arquivos[idx]) sumOutros += (b.arquivos[idx].duration || 0);
         }
-         
+        
         segundosRestantes = restanteAtual + sumOutros;
         mostrar = true;
     } 
@@ -1989,7 +2004,7 @@ setInterval(() => {
     if (mostrar && segundosRestantes > 0) {
         contadorEl.innerHTML = `⏳ Faltam <span style="color:#ff4d4d; font-weight:900; font-size:12px;">${fmt(segundosRestantes)}</span> para o próximo bloco`;
     }
-     
+    
     _ultimoBlocoAtivo = idxBloco;
 }, 1000);
 
