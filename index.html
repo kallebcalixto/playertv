@@ -1708,32 +1708,44 @@ function startM3UNow(b) {
         hlsInstance = null;
     }
 
-    console.log("Iniciando M3U (Auto-Play corrigido):", b.m3ulink);
+    console.log("Iniciando M3U com CORS 100% blindado:", b.m3ulink);
 
     if (Hls.isSupported()) {
         hlsInstance = new Hls({
             xhrSetup: function (xhr, url) {
                 xhr.withCredentials = false;
-            }
+            },
+            enableWorker: true,
+            lowLatencyMode: true
         });
 
         hlsInstance.loadSource(b.m3ulink);
         hlsInstance.attachMedia(video);
         
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
-            console.log("Manifesto OK. Forçando play...");
-            video.muted = true; // Inicia mutado para burlar bloqueio do Chrome
+            console.log("Manifesto HLS carregado com sucesso!");
+            video.muted = true; 
             video.play().then(() => {
-                console.log("Play executado com sucesso! Desmutando...");
                 setTimeout(() => { video.muted = false; }, 800);
             }).catch((e) => {
-                console.warn("Autoplay impedido, aguardando interação:", e);
+                console.warn("Play automático impedido:", e);
             });
         });
 
         hlsInstance.on(Hls.Events.ERROR, function (event, data) {
+            console.warn("HLS Error:", data.type, data.details);
             if (data.fatal) {
-                console.error("Erro fatal no HLS:", data);
+                switch (data.type) {
+                    case Hls.ErrorTypes.NETWORK_ERROR:
+                        hlsInstance.startLoad();
+                        break;
+                    case Hls.ErrorTypes.MEDIA_ERROR:
+                        hlsInstance.recoverMediaError();
+                        break;
+                    default:
+                        hlsInstance.destroy();
+                        break;
+                }
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
