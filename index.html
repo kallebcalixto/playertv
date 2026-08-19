@@ -620,7 +620,6 @@
     <div class="wrap">
       
       <div id="movel-topo-direito" class="movel redimensionavel" style="top: 20px; right: 20px; width: 450px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
-          <!-- Relógio Digital inserido aqui perto do Admin -->
           <div id="relogio-digital">00:00:00</div>
 
           <div style="display: flex; flex-direction: column; align-items: center; margin-right: 5px;">
@@ -660,7 +659,6 @@
           <video id="player" controls playsinline></video>
           <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
           
-          <!-- BARRA DE PROGRESSO LOGO ABAIXO DO PLAYER -->
           <div id="barra-progresso-container" onclick="pularTempoVideo(event)">
              <div id="barra-progresso-fill"></div>
           </div>
@@ -1710,17 +1708,16 @@ function startM3UNow(b) {
         hlsInstance = null;
     }
 
+    // Proxy CORS aplicado para contornar o bloqueio de segurança do navegador
+    const proxyUrl = "https://corsproxy.io/?" + encodeURIComponent(b.m3ulink);
+
     if (Hls.isSupported()) {
         hlsInstance = new Hls({ 
             enableWorker: true, 
-            lowLatencyMode: true,
-            xhrSetup: function (xhr, url) {
-                xhr.open('GET', url, true);
-                xhr.withCredentials = false;
-            }
+            lowLatencyMode: true
         });
 
-        hlsInstance.loadSource(b.m3ulink); 
+        hlsInstance.loadSource(proxyUrl); 
         hlsInstance.attachMedia(video);
         
         hlsInstance.on(Hls.Events.MANIFEST_PARSED, () => { 
@@ -1744,7 +1741,7 @@ function startM3UNow(b) {
             }
         });
     } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
-        video.src = b.m3ulink; 
+        video.src = proxyUrl; 
         video.addEventListener('loadedmetadata', () => video.play());
     }
 }
