@@ -1122,7 +1122,7 @@ function horarioParaSegundos(strHora) {
     return h * 3600 + m * 60 + s;
 }
 
-// LOGICA APRIMORADA: PRIORIDADE TOTAL AO PRÓXIMO EVENTO DE HOJE (ADMIN, FIXO, FILMES E ARQUIVOS)
+// LOGICA APRIMORADA: MOSTRA FIELMENTE O PRÓXIMO EVENTO OU ITEM INDEPENDENTE DO TIPO DE BLOCO
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
     
@@ -1130,10 +1130,9 @@ function obterNomeASeguir() {
     const hoje = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
     const segundosAgora = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
 
-    let proximoEvento = null;
-    let menorDiferenca = Infinity;
+    let proximosEventos = [];
 
-    // 1. Varredura rigorosa em todos os blocos programados para hoje (Admin, Fixo, Filmes com horário)
+    // 1. Varre todos os blocos em busca de horários programados para hoje
     for (let i = 0; i < blocos.length; i++) {
         const b = blocos[i];
         if (!b || b.removido) continue;
@@ -1141,9 +1140,7 @@ function obterNomeASeguir() {
         let listaHorariosParaChecar = [];
         if (b.tipo === 'youtube' && Array.isArray(b.horariosAdmin)) {
             listaHorariosParaChecar = b.horariosAdmin;
-        } else if (b.tipo === 'timer' && Array.isArray(b.horarios)) {
-            listaHorariosParaChecar = b.horarios;
-        } else if (b.tipo === 'movie' && Array.isArray(b.horarios)) {
+        } else if ((b.tipo === 'timer' || b.tipo === 'movie') && Array.isArray(b.horarios)) {
             listaHorariosParaChecar = b.horarios;
         }
 
@@ -1163,36 +1160,25 @@ function obterNomeASeguir() {
                 if (hObj && hObj.inicio) {
                     const segundosInicio = horarioParaSegundos(hObj.inicio);
                     let diff = segundosInicio - segundosAgora;
-                    
-                    // Prioriza estritamente o evento que vai acontecer hoje mais próximo de agora
-                    if (diff > 0 && diff < menorDiferenca) {
-                        menorDiferenca = diff;
+                    if (diff > 0) {
                         let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : (b.ytlink ? "Transmissão YouTube" : "Bloco Programado"));
-                        let minRestantes = Math.ceil(diff / 60);
-                        proximoEvento = `${nomeBloco} (às ${hObj.inicio}, em ${minRestantes} min)`;
+                        proximosEventos.push({ nome: `${nomeBloco} (às ${hObj.inicio})`, diff: diff });
                     }
                 }
             });
         }
     }
 
-    if (proximoEvento) {
-        return proximoEvento;
+    if (proximosEventos.length > 0) {
+        proximosEventos.sort((a, b) => a.diff - b.diff);
+        return proximosEventos[0].nome;
     }
 
-    // 2. Se não houver horário específico iminente, busca o próximo arquivo da playlist do bloco atual ou do próximo bloco
+    // 2. Fallback sequencial: mostra o próximo arquivo do bloco atual ou o próximo bloco da grade
     const b = blocos[idxBloco];
     if (b && !b.removido) {
         if (b.arquivos && b.arquivos.length > 0) {
             let nextFileIdx = (b.arquivoAtual + 1) % b.arquivos.length;
-            if (b.tipo === 'movie' && ((b._count || 0) + 1 >= (b.limitePorCiclo || 3))) {
-                // Se o bloco de filmes vai atingir o limite, pula pro próximo bloco geral
-                let nextIdx = (idxBloco + 1) % blocos.length;
-                let nextB = blocos[nextIdx];
-                if (nextB && !nextB.removido) {
-                    return nextB.nome ? nextB.nome : (nextB.arquivos && nextB.arquivos[0] ? extrairNomeLimpo(nextB.arquivos[0].file.name) : "Próximo Bloco");
-                }
-            }
             return extrairNomeLimpo(b.arquivos[nextFileIdx].file.name);
         }
     }
@@ -1482,10 +1468,10 @@ function verificarAgendados() {
         tocarAtual();
         
         if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
-          if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
-            video.currentTime = progressoSalvo;
-            if (estavaPausado) video.pause();
-          }
+            if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
+                video.currentTime = progressoSalvo;
+                if (estavaPausado) video.pause();
+            }
         }
       } else { window.proximoBloco(); }
     }
@@ -2028,4 +2014,3 @@ setInterval(() => {
 </script>
 </body>
 </html>
-
