@@ -1113,80 +1113,37 @@ function extrairNomeLimpo(nomeBruto) {
     return nomeLimpo || "Vídeo";
 }
 
-function horarioParaSegundos(strHora) {
-    if (!strHora) return 0;
-    const partes = strHora.split(':').map(Number);
-    const h = partes[0] || 0;
-    const m = partes[1] || 0;
-    const s = partes[2] || 0;
-    return h * 3600 + m * 60 + s;
-}
-
-// LOGICA APRIMORADA: MOSTRA FIELMENTE O PRÓXIMO EVENTO OU ITEM INDEPENDENTE DO TIPO DE BLOCO
+// LOGICA RIGOROSA: LE FIELMENTE O QUE VEM A SEGUIR SEGUINDO A ORDEM DA PROGRAMAÇÃO ATUAL
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
+
+    const bAtual = blocos[idxBloco];
+    if (!bAtual) return "";
+
+    // 1. Se o bloco atual possui arquivos (Ex: Bloco de Filmes, Tempo Fixo, etc.), verifica se há próximo arquivo dentro do próprio bloco
+    if (bAtual.arquivos && bAtual.arquivos.length > 0) {
+        const nextFileIdx = bAtual.arquivoAtual + 1;
+        if (nextFileIdx < bAtual.arquivos.length) {
+            return extrairNomeLimpo(bAtual.arquivos[nextFileIdx].file.name);
+        }
+    }
+
+    // 2. Se acabou os arquivos do bloco atual (ou se for YouTube / M3U / Pausa), pega estritamente o próximo bloco da sequência geral (grade)
+    const nextIdx = (idxBloco + 1) % blocos.length;
+    const bNext = blocos[nextIdx];
     
-    const agora = new Date();
-    const hoje = ["domingo", "segunda", "terca", "quarta", "quinta", "sexta", "sabado"][agora.getDay()];
-    const segundosAgora = agora.getHours() * 3600 + agora.getMinutes() * 60 + agora.getSeconds();
-
-    let proximosEventos = [];
-
-    // 1. Varre todos os blocos em busca de horários programados para hoje
-    for (let i = 0; i < blocos.length; i++) {
-        const b = blocos[i];
-        if (!b || b.removido) continue;
-
-        let listaHorariosParaChecar = [];
-        if (b.tipo === 'youtube' && Array.isArray(b.horariosAdmin)) {
-            listaHorariosParaChecar = b.horariosAdmin;
-        } else if ((b.tipo === 'timer' || b.tipo === 'movie') && Array.isArray(b.horarios)) {
-            listaHorariosParaChecar = b.horarios;
-        }
-
-        let diaMatch = false;
-        if (b.tipo === 'youtube') {
-            if (Array.isArray(b.diaSemana)) {
-                diaMatch = b.diaSemana.length === 0 || b.diaSemana.includes(hoje);
-            } else {
-                diaMatch = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje));
-            }
+    if (bNext && !bNext.removido) {
+        if (bNext.nome && bNext.nome.trim() !== "") {
+            return bNext.nome;
+        } else if (bNext.arquivos && bNext.arquivos.length > 0 && bNext.arquivos[0]) {
+            return extrairNomeLimpo(bNext.arquivos[0].file.name);
+        } else if (bNext.m3ulink) {
+            return "Transmissão M3U";
+        } else if (bNext.ytlink) {
+            return "Transmissão YouTube";
         } else {
-            diaMatch = (!b.diasSelecionados || b.diasSelecionados.length === 0 || b.diasSelecionados.includes(hoje));
+            return `Bloco ${nextIdx + 1}`;
         }
-
-        if (diaMatch) {
-            listaHorariosParaChecar.forEach(hObj => {
-                if (hObj && hObj.inicio) {
-                    const segundosInicio = horarioParaSegundos(hObj.inicio);
-                    let diff = segundosInicio - segundosAgora;
-                    if (diff > 0) {
-                        let nomeBloco = b.nome ? b.nome : (b.m3ulink ? "Transmissão M3U" : (b.ytlink ? "Transmissão YouTube" : "Bloco Programado"));
-                        proximosEventos.push({ nome: `${nomeBloco} (às ${hObj.inicio})`, diff: diff });
-                    }
-                }
-            });
-        }
-    }
-
-    if (proximosEventos.length > 0) {
-        proximosEventos.sort((a, b) => a.diff - b.diff);
-        return proximosEventos[0].nome;
-    }
-
-    // 2. Fallback sequencial: mostra o próximo arquivo do bloco atual ou o próximo bloco da grade
-    const b = blocos[idxBloco];
-    if (b && !b.removido) {
-        if (b.arquivos && b.arquivos.length > 0) {
-            let nextFileIdx = (b.arquivoAtual + 1) % b.arquivos.length;
-            return extrairNomeLimpo(b.arquivos[nextFileIdx].file.name);
-        }
-    }
-
-    let nextIdx = (idxBloco + 1) % blocos.length;
-    let nextB = blocos[nextIdx];
-    if (nextB && !nextB.removido) {
-        return nextB.nome ? nextB.nome : (nextB.arquivos && nextB.arquivos[0] ? extrairNomeLimpo(nextB.arquivos[0].file.name) : "Próximo Bloco");
     }
 
     return "";
