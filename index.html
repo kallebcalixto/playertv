@@ -828,6 +828,8 @@ let sistemaIniciado = false;
 
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
+let fbProgressoSalvo = 0;
+let fbArquivoSalvo = 0;
 
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
@@ -1113,14 +1115,12 @@ function extrairNomeLimpo(nomeBruto) {
     return nomeLimpo || "Vídeo";
 }
 
-// LOGICA RIGOROSA: LE FIELMENTE O QUE VEM A SEGUIR SEGUINDO A ORDEM DA PROGRAMAÇÃO ATUAL
 function obterNomeASeguir() {
     if (!blocos || blocos.length === 0) return "";
 
     const bAtual = blocos[idxBloco];
     if (!bAtual) return "";
 
-    // 1. Se o bloco atual possui arquivos (Ex: Bloco de Filmes, Tempo Fixo, etc.), verifica se há próximo arquivo dentro do próprio bloco
     if (bAtual.arquivos && bAtual.arquivos.length > 0) {
         const nextFileIdx = bAtual.arquivoAtual + 1;
         if (nextFileIdx < bAtual.arquivos.length) {
@@ -1128,7 +1128,6 @@ function obterNomeASeguir() {
         }
     }
 
-    // 2. Se acabou os arquivos do bloco atual (ou se for YouTube / M3U / Pausa), pega estritamente o próximo bloco da sequência geral (grade)
     const nextIdx = (idxBloco + 1) % blocos.length;
     const bNext = blocos[nextIdx];
     
@@ -1394,12 +1393,19 @@ function verificarAgendados() {
     if (!b._agendadoRodando) {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
-        if (blocos[idxBloco].tipo === 'youtube' && ytUltimoPlayTimestamp > 0) {
-          const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-          ytTempoSalvo += Math.floor(decorrido);
-          ytUltimoPlayTimestamp = 0;
+        const blocoAtivo = blocos[idxBloco];
+        if (blocoAtivo.tipo === 'youtube' || blocoAtivo._firebaseIndex !== undefined) {
+          if (blocoAtivo.tipo === 'youtube' && ytUltimoPlayTimestamp > 0) {
+            const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
+            ytTempoSalvo += Math.floor(decorrido);
+            ytUltimoPlayTimestamp = 0;
+          } else {
+            fbProgressoSalvo = video.currentTime || 0;
+            fbArquivoSalvo = blocoAtivo.arquivoAtual || 0;
+          }
         }
-        if (blocoAnteriorIdx === -1 && blocos[idxBloco].tipo !== 'youtube') {
+
+        if (blocoAnteriorIdx === -1 && blocoAtivo.tipo !== 'youtube') {
             blocoAnteriorIdx = idxBloco; 
             blocoAnteriorProgresso = video.currentTime; 
             blocoAnteriorPaused = video.paused;
@@ -1415,11 +1421,31 @@ function verificarAgendados() {
     const agendadoQueEstavaRodando = blocos.find(b => b._agendadoRodando);
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
-      if (blocoAnteriorIdx !== -1) {
+      
+      const idxFirebaseAnterior = blocos.findIndex(b => b.tipo === 'youtube' || b._firebaseIndex !== undefined);
+      if (idxFirebaseAnterior !== -1) {
+        idxBloco = idxFirebaseAnterior;
+        video.style.opacity = '0'; video.style.backgroundColor = '#000000';
+        tocarAtual();
+
+        setTimeout(() => {
+          const bTarget = blocos[idxBloco];
+          if (bTarget) {
+            bTarget.arquivoAtual = fbArquivoSalvo || 0;
+            if (bTarget.tipo === 'youtube' && bTarget.ytlink) {
+               startYouTubeNow(bTarget);
+            } else {
+               video.currentTime = fbProgressoSalvo || 0;
+               video.play().catch(()=>{});
+            }
+          }
+        }, 300);
+
+      } else if (blocoAnteriorIdx !== -1) {
         idxBloco = blocoAnteriorIdx; 
         const progressoSalvo = blocoAnteriorProgresso;
         const estavaPausado = blocoAnteriorPaused;
-        blocoAnteriorIdx = -1; 
+        blocoAnteriorIdx = -1;
         
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
