@@ -816,19 +816,15 @@ let blocos = [];
 let idxBloco = 0;
 let timeupdateHandler = null;
 let pauseTimer = null;
-let blocoAnteriorIdx = -1;
-let blocoAnteriorProgresso = 0;
-let blocoAnteriorPaused = false;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
+// Estado salvo universal para qualquer bloco que estiver rodando (Dropbox, Interno, M3U, YouTube, Firebase)
+let progressoBlocoSalvo = 0;
+let arquivoBlocoSalvo = 0;
+let idxBlocoSalvo = -1;
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
-
-// Variáveis blindadas para salvar exatamente o filme/dropbox que estava rodando antes do comercial entrar
-let progressoBlocoFilmeSalvo = 0;
-let arquivoBlocoFilmeSalvo = 0;
-let idxBlocoFilmeSalvo = -1;
 
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
@@ -1301,7 +1297,7 @@ function renderizarBloco(i, bloco){
   }
 
   card.innerHTML = `
-    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':bloco.tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
+    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':blocos[i].tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
     <div class="row"><label>Nome:</label><input type="text" placeholder="Ex: Jaspion" value="${bloco.nome || ''}" onchange="definirNomeBloco(${i}, this.value)" style="width:145px; background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px;"></div>
     <div class="row">
         ${(isTimer||isMovie) ? `
@@ -1356,6 +1352,7 @@ function verificarAgendados() {
   const horaAtual = `${h}:${m}:${s}`;
   let blocoEncontrado = false; let indiceParaRodar = -1;
 
+  // 1. Verifica se há Bloco de Tempo Fixo (Comercial) programado para este horário exato
   for (let i = 0; i < blocos.length; i++) {
     const b = blocos[i]; if (!b || b.removido) continue;
     if (b.tipo === 'timer' && b.horarios && b.horarios.length > 0) {
@@ -1365,6 +1362,7 @@ function verificarAgendados() {
     }
   }
 
+  // 2. Se não tem Tempo Fixo, verifica se há Programação Extra (YouTube / M3U / Firebase) ativa
   if (!blocoEncontrado) {
     for (let i = 0; i < blocos.length; i++) {
       const b = blocos[i]; if (!b || b.removido) continue;
@@ -1393,11 +1391,18 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
-        if (blocoAtivo && blocoAtivo.tipo !== 'timer') {
-          // Salva perfeitamente o estado atual do filme/dropbox/arquivo interno antes de entrar o comercial
-          progressoBlocoFilmeSalvo = video.currentTime || 0;
-          arquivoBlocoFilmeSalvo = blocoAtivo.arquivoAtual || 0;
-          idxBlocoFilmeSalvo = idxBloco;
+        if (blocoAtivo) {
+          // Salva perfeitamente o estado atual (seja Dropbox, Interno, M3U, YouTube ou Firebase)
+          if (blocoAtivo.tipo === 'youtube' && blocoAtivo.ytlink) {
+            if (ytUltimoPlayTimestamp > 0) {
+              ytTempoSalvo += Math.floor((Date.now() - ytUltimoPlayTimestamp) / 1000);
+              ytUltimoPlayTimestamp = 0;
+            }
+          } else {
+            progressoBlocoSalvo = video.currentTime || 0;
+            arquivoBlocoSalvo = blocoAtivo.arquivoAtual || 0;
+            idxBlocoSalvo = idxBloco;
+          }
         }
       }
       
@@ -1405,16 +1410,16 @@ function verificarAgendados() {
       b._agendadoRodando = true; idxBloco = indiceParaRodar; sistemaIniciado = true; tocarAtual();
     }
   } else {
+    // Quando o horário programado (comercial ou extra) acaba, retorna EXATAMENTE de onde parou o bloco principal anterior
     const agendadoQueEstavaRodando = blocos.find(b => b._agendadoRodando);
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
       
-      // Ao acabar o horário do comercial, retorna EXATAMENTE para o bloco de filmes/dropbox que estava rodando
-      if (idxBlocoFilmeSalvo !== -1 && blocos[idxBlocoFilmeSalvo] && !blocos[idxBlocoFilmeSalvo].removido) {
-        idxBloco = idxBlocoFilmeSalvo;
+      if (idxBlocoSalvo !== -1 && blocos[idxBlocoSalvo] && !blocos[idxBlocoSalvo].removido) {
+        idxBloco = idxBlocoSalvo;
         const bTarget = blocos[idxBloco];
         
-        bTarget.arquivoAtual = arquivoBlocoFilmeSalvo || 0;
+        bTarget.arquivoAtual = arquivoBlocoSalvo || 0;
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
 
@@ -1422,7 +1427,7 @@ function verificarAgendados() {
           if (bTarget.tipo === 'youtube' && bTarget.ytlink) {
              startYouTubeNow(bTarget);
           } else {
-             video.currentTime = progressoBlocoFilmeSalvo || 0;
+             video.currentTime = progressoBlocoSalvo || 0;
              video.play().catch(()=>{});
           }
         }, 300);
