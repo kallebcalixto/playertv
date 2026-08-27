@@ -1395,10 +1395,12 @@ function verificarAgendados() {
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
         if (blocoAtivo.tipo === 'youtube' || blocoAtivo._firebaseIndex !== undefined) {
-          if (blocoAtivo.tipo === 'youtube' && ytUltimoPlayTimestamp > 0) {
-            const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-            ytTempoSalvo += Math.floor(decorrido);
-            ytUltimoPlayTimestamp = 0;
+          if (blocoAtivo.tipo === 'youtube' && blocoAtivo.ytlink) {
+            if (ytUltimoPlayTimestamp > 0) {
+              const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
+              ytTempoSalvo += Math.floor(decorrido);
+              ytUltimoPlayTimestamp = 0;
+            }
           } else {
             fbProgressoSalvo = video.currentTime || 0;
             fbArquivoSalvo = blocoAtivo.arquivoAtual || 0;
@@ -1412,8 +1414,6 @@ function verificarAgendados() {
         }
       }
       
-      b.arquivoAtual = 0;
-
       blocos.forEach(bl => bl._agendadoRodando = false);
       b._agendadoRodando = true; idxBloco = indiceParaRodar; sistemaIniciado = true; tocarAtual();
     }
@@ -1426,12 +1426,17 @@ function verificarAgendados() {
       if (idxFirebaseAnterior !== -1) {
         idxBloco = idxFirebaseAnterior;
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
+        
+        // Restaura exatamente o arquivo e o segundo salvo do Firebase
+        const bTarget = blocos[idxBloco];
+        if (bTarget) {
+          bTarget.arquivoAtual = fbArquivoSalvo || 0;
+        }
+
         tocarAtual();
 
         setTimeout(() => {
-          const bTarget = blocos[idxBloco];
           if (bTarget) {
-            bTarget.arquivoAtual = fbArquivoSalvo || 0;
             if (bTarget.tipo === 'youtube' && bTarget.ytlink) {
                startYouTubeNow(bTarget);
             } else {
