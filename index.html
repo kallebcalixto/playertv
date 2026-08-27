@@ -828,8 +828,9 @@ let sistemaIniciado = false;
 
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
-let fbProgressoSalvo = 0;
-let fbArquivoSalvo = 0;
+let progressoBlocoFilmeSalvo = 0;
+let arquivoBlocoFilmeSalvo = 0;
+let idxBlocoFilmeSalvo = -1;
 
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
@@ -1394,7 +1395,7 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
-        if (blocoAtivo.tipo === 'youtube' || blocoAtivo._firebaseIndex !== undefined) {
+        if (blocoAtivo) {
           if (blocoAtivo.tipo === 'youtube' && blocoAtivo.ytlink) {
             if (ytUltimoPlayTimestamp > 0) {
               const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
@@ -1402,8 +1403,10 @@ function verificarAgendados() {
               ytUltimoPlayTimestamp = 0;
             }
           } else {
-            fbProgressoSalvo = video.currentTime || 0;
-            fbArquivoSalvo = blocoAtivo.arquivoAtual || 0;
+            // Salva o estado exato de qualquer bloco anterior (Filmes / Dropbox, M3U, Firebase, etc.)
+            progressoBlocoFilmeSalvo = video.currentTime || 0;
+            arquivoBlocoFilmeSalvo = blocoAtivo.arquivoAtual || 0;
+            idxBlocoFilmeSalvo = idxBloco;
           }
         }
 
@@ -1422,27 +1425,21 @@ function verificarAgendados() {
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
       
-      const idxFirebaseAnterior = blocos.findIndex(b => b.tipo === 'youtube' || b._firebaseIndex !== undefined);
-      if (idxFirebaseAnterior !== -1) {
-        idxBloco = idxFirebaseAnterior;
-        video.style.opacity = '0'; video.style.backgroundColor = '#000000';
-        
-        // Restaura exatamente o arquivo e o segundo salvo do Firebase
+      // Ao acabar o tempo fixo (comercial), retorna EXATAMENTE para o bloco que estava rodando antes (Filmes, M3U, Firebase, etc.)
+      if (idxBlocoFilmeSalvo !== -1 && blocos[idxBlocoFilmeSalvo] && !blocos[idxBlocoFilmeSalvo].removido) {
+        idxBloco = idxBlocoFilmeSalvo;
         const bTarget = blocos[idxBloco];
-        if (bTarget) {
-          bTarget.arquivoAtual = fbArquivoSalvo || 0;
-        }
-
+        
+        bTarget.arquivoAtual = arquivoBlocoFilmeSalvo || 0;
+        video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
 
         setTimeout(() => {
-          if (bTarget) {
-            if (bTarget.tipo === 'youtube' && bTarget.ytlink) {
-               startYouTubeNow(bTarget);
-            } else {
-               video.currentTime = fbProgressoSalvo || 0;
-               video.play().catch(()=>{});
-            }
+          if (bTarget.tipo === 'youtube' && bTarget.ytlink) {
+             startYouTubeNow(bTarget);
+          } else {
+             video.currentTime = progressoBlocoFilmeSalvo || 0;
+             video.play().catch(()=>{});
           }
         }, 300);
 
