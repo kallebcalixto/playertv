@@ -23,7 +23,6 @@
     user-select: none;
   }
 
-  /* ESTILOS DO RELÓGIO E DA BARRA DE PROGRESSO INTERATIVA */
   #relogio-digital {
     font-family: monospace;
     font-size: 14px;
@@ -54,7 +53,6 @@
     pointer-events: none;
   }
 
-  /* SISTEMA DE SELEÇÃO POR CLIQUE */
   .movel {
     position: absolute !important;
     z-index: 10;
@@ -622,7 +620,6 @@
     <div class="wrap">
       
       <div id="movel-topo-direito" class="movel redimensionavel" style="top: 20px; right: 20px; width: 450px; display: flex; gap: 10px; z-index: 10000; align-items: center; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 8px; border: 1px solid #333;">
-          <!-- Relógio Digital inserido aqui perto do Admin -->
           <div id="relogio-digital">00:00:00</div>
 
           <div style="display: flex; flex-direction: column; align-items: center; margin-right: 5px;">
@@ -662,7 +659,6 @@
           <video id="player" controls playsinline></video>
           <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
           
-          <!-- BARRA DE PROGRESSO LOGO ABAIXO DO PLAYER -->
           <div id="barra-progresso-container" onclick="pularTempoVideo(event)">
              <div id="barra-progresso-fill"></div>
           </div>
@@ -828,6 +824,8 @@ let sistemaIniciado = false;
 
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
+
+// Variáveis blindadas para salvar exatamente o filme/dropbox que estava rodando antes do comercial entrar
 let progressoBlocoFilmeSalvo = 0;
 let arquivoBlocoFilmeSalvo = 0;
 let idxBlocoFilmeSalvo = -1;
@@ -1395,25 +1393,11 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
-        if (blocoAtivo) {
-          if (blocoAtivo.tipo === 'youtube' && blocoAtivo.ytlink) {
-            if (ytUltimoPlayTimestamp > 0) {
-              const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-              ytTempoSalvo += Math.floor(decorrido);
-              ytUltimoPlayTimestamp = 0;
-            }
-          } else {
-            // Salva o estado exato de qualquer bloco anterior (Filmes / Dropbox, M3U, Firebase, etc.)
-            progressoBlocoFilmeSalvo = video.currentTime || 0;
-            arquivoBlocoFilmeSalvo = blocoAtivo.arquivoAtual || 0;
-            idxBlocoFilmeSalvo = idxBloco;
-          }
-        }
-
-        if (blocoAnteriorIdx === -1 && blocoAtivo.tipo !== 'youtube') {
-            blocoAnteriorIdx = idxBloco; 
-            blocoAnteriorProgresso = video.currentTime; 
-            blocoAnteriorPaused = video.paused;
+        if (blocoAtivo && blocoAtivo.tipo !== 'timer') {
+          // Salva perfeitamente o estado atual do filme/dropbox/arquivo interno antes de entrar o comercial
+          progressoBlocoFilmeSalvo = video.currentTime || 0;
+          arquivoBlocoFilmeSalvo = blocoAtivo.arquivoAtual || 0;
+          idxBlocoFilmeSalvo = idxBloco;
         }
       }
       
@@ -1425,7 +1409,7 @@ function verificarAgendados() {
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
       
-      // Ao acabar o tempo fixo (comercial), retorna EXATAMENTE para o bloco que estava rodando antes (Filmes, M3U, Firebase, etc.)
+      // Ao acabar o horário do comercial, retorna EXATAMENTE para o bloco de filmes/dropbox que estava rodando
       if (idxBlocoFilmeSalvo !== -1 && blocos[idxBlocoFilmeSalvo] && !blocos[idxBlocoFilmeSalvo].removido) {
         idxBloco = idxBlocoFilmeSalvo;
         const bTarget = blocos[idxBloco];
@@ -1443,21 +1427,6 @@ function verificarAgendados() {
           }
         }, 300);
 
-      } else if (blocoAnteriorIdx !== -1) {
-        idxBloco = blocoAnteriorIdx; 
-        const progressoSalvo = blocoAnteriorProgresso;
-        const estavaPausado = blocoAnteriorPaused;
-        blocoAnteriorIdx = -1;
-        
-        video.style.opacity = '0'; video.style.backgroundColor = '#000000';
-        tocarAtual();
-        
-        if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
-            if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
-                video.currentTime = progressoSalvo;
-                if (estavaPausado) video.pause();
-            }
-        }
       } else { window.proximoBloco(); }
     }
   }
@@ -1539,25 +1508,7 @@ async function tocarAtual() {
               } else {
                   b.arquivoAtual = 0;
                   b._agendadoRodando = false;
-                  
-                  if (blocoAnteriorIdx !== -1) {
-                      idxBloco = blocoAnteriorIdx; 
-                      const progressoSalvo = blocoAnteriorProgresso;
-                      const estavaPausado = blocoAnteriorPaused;
-                      blocoAnteriorIdx = -1;
-                      
-                      video.style.opacity = '0'; video.style.backgroundColor = '#000000';
-                      tocarAtual();
-                      
-                      if (blocos[idxBloco] && blocos[idxBloco].tipo !== 'youtube') {
-                          if (blocos[idxBloco].arquivos && blocos[idxBloco].arquivos[blocos[idxBloco].arquivoAtual]) {
-                              video.currentTime = progressoSalvo;
-                              if (estavaPausado) video.pause();
-                          }
-                      }
-                  } else {
-                      window.proximoBloco();
-                  }
+                  window.proximoBloco();
               }
           };
       }
@@ -1702,11 +1653,6 @@ function startM3UNow(b) {
 
 function stopM3U() { if (hlsInstance) { hlsInstance.detachMedia(); hlsInstance.destroy(); hlsInstance = null; } video.pause(); video.removeAttribute('src'); video.load(); }
 function detachTimers(){ if(timeupdateHandler) video.removeEventListener('timeupdate', timeupdateHandler); video.onended=null; }
-function proximoArquivoMesmoBloco(){ 
-  const b=blocos[idxBloco]; b.arquivoAtual=(b.arquivoAtual+1)%b.arquivos.length; 
-  if(b.tipo === 'timer') atualizarInfoTempo(idxBloco);
-  tocarAtual(); 
-}
 
 window.resizePlayer = function(){ 
     const w = document.getElementById('playerWidth').value; 
