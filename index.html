@@ -819,7 +819,7 @@ let pauseTimer = null;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
-// Estado salvo universal para qualquer bloco que estiver rodando (Dropbox, Interno, M3U, YouTube, Firebase)
+// Variáveis de estado global para salvar perfeitamente de onde parou antes de entrar o Firebase / Timer / YouTube
 let progressoBlocoSalvo = 0;
 let arquivoBlocoSalvo = 0;
 let idxBlocoSalvo = -1;
@@ -1297,7 +1297,7 @@ function renderizarBloco(i, bloco){
   }
 
   card.innerHTML = `
-    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':blocos[i].tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
+    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':bloco.tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
     <div class="row"><label>Nome:</label><input type="text" placeholder="Ex: Jaspion" value="${bloco.nome || ''}" onchange="definirNomeBloco(${i}, this.value)" style="width:145px; background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px;"></div>
     <div class="row">
         ${(isTimer||isMovie) ? `
@@ -1352,7 +1352,7 @@ function verificarAgendados() {
   const horaAtual = `${h}:${m}:${s}`;
   let blocoEncontrado = false; let indiceParaRodar = -1;
 
-  // 1. Verifica se há Bloco de Tempo Fixo (Comercial) programado para este horário exato
+  // 1. Verifica se há Bloco de Tempo Fixo (Comercial) programado para este horário e dia exatos
   for (let i = 0; i < blocos.length; i++) {
     const b = blocos[i]; if (!b || b.removido) continue;
     if (b.tipo === 'timer' && b.horarios && b.horarios.length > 0) {
@@ -1362,14 +1362,19 @@ function verificarAgendados() {
     }
   }
 
-  // 2. Se não tem Tempo Fixo, verifica se há Programação Extra (YouTube / M3U / Firebase) ativa
+  // 2. Se não tem Tempo Fixo, verifica se há Programação Extra (YouTube / M3U / Firebase) ativa para este dia e horário
   if (!blocoEncontrado) {
     for (let i = 0; i < blocos.length; i++) {
       const b = blocos[i]; if (!b || b.removido) continue;
       if (b.tipo === 'youtube') {
-        let diaMatch = false;
-        if (Array.isArray(b.diaSemana)) { diaMatch = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
-        else { diaMatch = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
+        let diaMatchAdmin = false;
+        if (Array.isArray(b.diaSemana)) { 
+            diaMatchAdmin = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); 
+        } else if (typeof b.diaSemana === 'string') {
+            diaMatchAdmin = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
+        } else {
+            diaMatchAdmin = true;
+        }
         
         let dentroDoHorario = false;
         if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
@@ -1380,7 +1385,7 @@ function verificarAgendados() {
             dentroDoHorario = (b.horaInicio && b.horaFim && horaAtual >= inicioStr && horaAtual < fimStr);
         }
 
-        if (diaMatch && dentroDoHorario) { blocoEncontrado = true; indiceParaRodar = i; break; }
+        if (diaMatchAdmin && dentroDoHorario) { blocoEncontrado = true; indiceParaRodar = i; break; }
       }
     }
   }
@@ -1391,18 +1396,11 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
-        if (blocoAtivo) {
-          // Salva perfeitamente o estado atual (seja Dropbox, Interno, M3U, YouTube ou Firebase)
-          if (blocoAtivo.tipo === 'youtube' && blocoAtivo.ytlink) {
-            if (ytUltimoPlayTimestamp > 0) {
-              ytTempoSalvo += Math.floor((Date.now() - ytUltimoPlayTimestamp) / 1000);
-              ytUltimoPlayTimestamp = 0;
-            }
-          } else {
-            progressoBlocoSalvo = video.currentTime || 0;
-            arquivoBlocoSalvo = blocoAtivo.arquivoAtual || 0;
-            idxBlocoSalvo = idxBloco;
-          }
+        if (blocoAtivo && blocoAtivo.tipo !== 'youtube') {
+          // SALVA RIGOROSAMENTE O ESTADO ATUAL DO BLOCO ANTERIOR (Dropbox, Interno ou M3U) ANTES DO FIREBASE/TIMER ENTRAR
+          progressoBlocoSalvo = video.currentTime || 0;
+          arquivoBlocoSalvo = blocoAtivo.arquivoAtual || 0;
+          idxBlocoSalvo = idxBloco;
         }
       }
       
@@ -1410,7 +1408,7 @@ function verificarAgendados() {
       b._agendadoRodando = true; idxBloco = indiceParaRodar; sistemaIniciado = true; tocarAtual();
     }
   } else {
-    // Quando o horário programado (comercial ou extra) acaba, retorna EXATAMENTE de onde parou o bloco principal anterior
+    // Quando o Firebase ou Timer acaba, retorna EXATAMENTE no arquivo e segundo em que estava o bloco anterior
     const agendadoQueEstavaRodando = blocos.find(b => b._agendadoRodando);
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
@@ -1424,12 +1422,8 @@ function verificarAgendados() {
         tocarAtual();
 
         setTimeout(() => {
-          if (bTarget.tipo === 'youtube' && bTarget.ytlink) {
-             startYouTubeNow(bTarget);
-          } else {
-             video.currentTime = progressoBlocoSalvo || 0;
-             video.play().catch(()=>{});
-          }
+           video.currentTime = progressoBlocoSalvo || 0;
+           video.play().catch(()=>{});
         }, 300);
 
       } else { window.proximoBloco(); }
@@ -1456,8 +1450,13 @@ async function tocarAtual() {
   }
   if (b.tipo === 'youtube') {
     let diaMatchAdmin = false;
-    if (Array.isArray(b.diaSemana)) { diaMatchAdmin = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); } 
-    else { diaMatchAdmin = (b.diaSemana === "" || (typeof b.diaSemana === 'string' && b.diaSemana.toLowerCase() === hoje)); }
+    if (Array.isArray(b.diaSemana)) { 
+        diaMatchAdmin = b.diaSemana.length === 0 || b.diaSemana.includes(hoje); 
+    } else if (typeof b.diaSemana === 'string') {
+        diaMatchAdmin = (b.diaSemana === "" || b.diaSemana.toLowerCase() === hoje);
+    } else {
+        diaMatchAdmin = true;
+    }
     
     let dentroDoHorarioAdmin = false;
     if (Array.isArray(b.horariosAdmin) && b.horariosAdmin.length > 0) {
@@ -1688,7 +1687,7 @@ window.pularTempoVideo = function(event) {
 window.salvarProgramacao = function(){ 
   const posicoes = {};
   document.querySelectorAll('.movel').forEach(el => {
-    if(el.id) { 
+    if(id = el.id) { 
       posicoes[el.id] = { 
         top: el.style.top, 
         left: el.style.left, 
