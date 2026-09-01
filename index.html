@@ -842,9 +842,9 @@ let estadoBlocoInterrompido = {
   fileName: ""
 };
 
-let ytTempoAcumuladoPorLink = {};
+let ytTemposSalvosBloco = {};
 let ytUltimoPlayTimestamp = 0;
-let ytUrlAtualAtiva = "";
+let ytIndiceAtivoAtual = -1;
 
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
@@ -1641,23 +1641,26 @@ window.removerBloco = function(i){
   atualizarGrade();
 }
 
-window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTempoAcumuladoPorLink = {}; ytUltimoPlayTimestamp = 0; ytUrlAtualAtiva = ""; tocarAtual(); }
+window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTemposSalvosBloco = {}; ytUltimoPlayTimestamp = 0; ytIndiceAtivoAtual = -1; tocarAtual(); }
 window.proximoBloco = function(){ idxBloco=(idxBloco+1)%blocos.length; tocarAtual(); }
 window.pausar = function(){ video.pause(); }
 window.retomar = function(){ video.play(); }
 
 function startYouTubeNow(b) {
     if (video) { video.pause(); }
+    
+    // Se mudou de bloco do YouTube, salva o tempo decorrido do bloco anterior
+    if (ytIndiceAtivoAtual !== -1 && ytIndiceAtivoAtual !== idxBloco && ytUltimoPlayTimestamp > 0) {
+        const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
+        ytTemposSalvosBloco[ytIndiceAtivoAtual] = (ytTemposSalvosBloco[ytIndiceAtivoAtual] || 0) + Math.floor(decorrido);
+    }
+
+    ytIndiceAtivoAtual = idxBloco;
     ytplayer.style.display = 'block'; video.style.display = 'none'; 
     const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); 
+    
     if(id) {
-       if (ytUrlAtualAtiva && ytUrlAtualAtiva !== b.ytlink && ytUltimoPlayTimestamp > 0) {
-           const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-           ytTempoAcumuladoPorLink[ytUrlAtualAtiva] = (ytTempoAcumuladoPorLink[ytUrlAtualAtiva] || 0) + Math.floor(decorrido);
-       }
-       
-       ytUrlAtualAtiva = b.ytlink;
-       let tempoSalvo = ytTempoAcumuladoPorLink[b.ytlink] || 0;
+       let tempoSalvo = ytTemposSalvosBloco[idxBloco] || 0;
        let startParam = tempoSalvo > 0 ? `&start=${Math.floor(tempoSalvo)}` : '';
        
        ytplayer.src = `https://www.youtube.com/embed/${id[1]}?autoplay=1${startParam}`;
@@ -1666,9 +1669,9 @@ function startYouTubeNow(b) {
 }
 
 function stopYouTube(){ 
-    if (ytUrlAtualAtiva && ytUltimoPlayTimestamp > 0) {
+    if (ytIndiceAtivoAtual !== -1 && ytUltimoPlayTimestamp > 0) {
         const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-        ytTempoAcumuladoPorLink[ytUrlAtualAtiva] = (ytTempoAcumuladoPorLink[ytUrlAtualAtiva] || 0) + Math.floor(decorrido);
+        ytTemposSalvosBloco[ytIndiceAtivoAtual] = (ytTemposSalvosBloco[ytIndiceAtivoAtual] || 0) + Math.floor(decorrido);
         ytUltimoPlayTimestamp = 0;
     }
     ytplayer.src=''; ytplayer.style.display='none'; 
