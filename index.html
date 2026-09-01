@@ -326,6 +326,7 @@
   }
 </style>
 <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+<script src="https://www.youtube.com/iframe_api"></script>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
@@ -673,7 +674,7 @@
           </div>
 
           <video id="player" controls playsinline></video>
-          <iframe id="ytplayer" allow="autoplay; encrypted-media" frameborder="0"></iframe>
+          <div id="ytplayer" style="display:none;"></div>
           
           <div id="barra-progresso-container" onclick="pularTempoVideo(event)">
              <div id="barra-progresso-fill"></div>
@@ -824,7 +825,6 @@
 
 <script>
 const video = document.getElementById('player');
-const ytplayer = document.getElementById('ytplayer');
 const gradeEl = document.getElementById('grade');
 const blocosEl = document.getElementById('blocos');
 
@@ -835,6 +835,11 @@ let pauseTimer = null;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
+let ytPlayerAPI = null;
+let ytPlayerPronto = false;
+let ytIdAtual = "";
+let ytTemposSalvos = {};
+
 let estadoBlocoInterrompido = {
   idx: -1,
   arquivoAtual: 0,
@@ -842,15 +847,24 @@ let estadoBlocoInterrompido = {
   fileName: ""
 };
 
-let ytTemposSalvosBloco = {};
-let ytUltimoPlayTimestamp = 0;
-let ytIndiceAtivoAtual = -1;
-
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
 
 let timerAseguirAtivo = null;
 let timerOcultarAseguir = null;
+
+window.onYouTubeIframeAPIReady = function() {
+    ytPlayerAPI = new YT.Player('ytplayer', {
+        height: '280',
+        width: '500',
+        playerVars: { 'autoplay': 1, 'controls': 1, 'rel': 0 },
+        events: {
+            'onReady': (event) => {
+                ytPlayerPronto = true;
+            }
+        }
+    });
+};
 
 window.aplicarLayout = function(posicoes) {
   if (!posicoes) return;
@@ -1504,7 +1518,7 @@ async function tocarAtual() {
   
   if (b.tipo !== 'youtube') {
     stopM3U(); stopYouTube();
-    ytplayer.style.display = 'none'; video.style.display = 'block';
+    document.getElementById('ytplayer').style.display = 'none'; video.style.display = 'block';
   }
 
   const card = document.getElementById(`bloco-${idxBloco}`); 
@@ -1520,7 +1534,7 @@ async function tocarAtual() {
           startM3UNow(b);
       } else if (b.arquivos && b.arquivos.length > 0) {
           video.style.display = 'block';
-          ytplayer.style.display = 'none';
+          document.getElementById('ytplayer').style.display = 'none';
           
           if (b.arquivoAtual >= b.arquivos.length) {
               b.arquivoAtual = 0;
@@ -1641,40 +1655,40 @@ window.removerBloco = function(i){
   atualizarGrade();
 }
 
-window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTemposSalvosBloco = {}; ytUltimoPlayTimestamp = 0; ytIndiceAtivoAtual = -1; tocarAtual(); }
+window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTemposSalvos = {}; ytIdAtual = ""; tocarAtual(); }
 window.proximoBloco = function(){ idxBloco=(idxBloco+1)%blocos.length; tocarAtual(); }
-window.pausar = function(){ video.pause(); }
-window.retomar = function(){ video.play(); }
+window.pausar = function(){ video.pause(); if (ytPlayerPronto && ytPlayerAPI && ytPlayerAPI.pauseVideo) ytPlayerAPI.pauseVideo(); }
+window.retomar = function(){ video.play(); if (ytPlayerPronto && ytPlayerAPI && ytPlayerAPI.playVideo) ytPlayerAPI.playVideo(); }
 
 function startYouTubeNow(b) {
     if (video) { video.pause(); }
     
-    // Se mudou de bloco do YouTube, salva o tempo decorrido do bloco anterior
-    if (ytIndiceAtivoAtual !== -1 && ytIndiceAtivoAtual !== idxBloco && ytUltimoPlayTimestamp > 0) {
-        const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-        ytTemposSalvosBloco[ytIndiceAtivoAtual] = (ytTemposSalvosBloco[ytIndiceAtivoAtual] || 0) + Math.floor(decorrido);
+    const matchId = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/);
+    if (!matchId) return;
+    const novoId = matchId[1];
+
+    if (ytIdAtual && ytIdAtual !== novoId && ytPlayerPronto && ytPlayerAPI && ytPlayerAPI.getCurrentTime) {
+        ytTemposSalvos[ytIdAtual] = ytPlayerAPI.getCurrentTime();
     }
 
-    ytIndiceAtivoAtual = idxBloco;
-    ytplayer.style.display = 'block'; video.style.display = 'none'; 
-    const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); 
-    
-    if(id) {
-       let tempoSalvo = ytTemposSalvosBloco[idxBloco] || 0;
-       let startParam = tempoSalvo > 0 ? `&start=${Math.floor(tempoSalvo)}` : '';
-       
-       ytplayer.src = `https://www.youtube.com/embed/${id[1]}?autoplay=1${startParam}`;
-       ytUltimoPlayTimestamp = Date.now();
+    ytIdAtual = novoId;
+    document.getElementById('ytplayer').style.display = 'block';
+    video.style.display = 'none';
+
+    if (ytPlayerPronto && ytPlayerAPI && ytPlayerAPI.loadVideoById) {
+        let tempoSalvo = ytTemposSalvos[novoId] || 0;
+        ytPlayerAPI.loadVideoById({ 'videoId': novoId, 'startSeconds': tempoSalvo });
     }
 }
 
 function stopYouTube(){ 
-    if (ytIndiceAtivoAtual !== -1 && ytUltimoPlayTimestamp > 0) {
-        const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-        ytTemposSalvosBloco[ytIndiceAtivoAtual] = (ytTemposSalvosBloco[ytIndiceAtivoAtual] || 0) + Math.floor(decorrido);
-        ytUltimoPlayTimestamp = 0;
+    if (ytIdAtual && ytPlayerPronto && ytPlayerAPI && ytPlayerAPI.getCurrentTime) {
+        try {
+            ytTemposSalvos[ytIdAtual] = ytPlayerAPI.getCurrentTime();
+            ytPlayerAPI.pauseVideo();
+        } catch(e) {}
     }
-    ytplayer.src=''; ytplayer.style.display='none'; 
+    document.getElementById('ytplayer').style.display = 'none'; 
 }
 
 function startM3UNow(b) {
@@ -1706,8 +1720,8 @@ window.resizePlayer = function(){
     const h = document.getElementById('playerHeight').value; 
     video.style.width = w + 'px'; 
     video.style.height = h + 'px'; 
-    ytplayer.style.width = w + 'px'; 
-    ytplayer.style.height = h + 'px'; 
+    const ytEl = document.getElementById('ytplayer');
+    if(ytEl) { ytEl.style.width = w + 'px'; ytEl.style.height = h + 'px'; }
 
     const barraContainer = document.getElementById('barra-progresso-container');
     if (barraContainer) {
@@ -1730,7 +1744,7 @@ window.pularTempoVideo = function(event) {
 window.salvarProgramacao = function(){ 
   const posicoes = {};
   document.querySelectorAll('.movel').forEach(el => {
-    if(el.id) { 
+    if(id = el.id) { 
       posicoes[el.id] = { 
         top: el.style.top, 
         left: el.style.left, 
