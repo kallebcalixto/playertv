@@ -490,17 +490,10 @@
   window.iniciarLeituraFirebase = function(referenciaDinamica) {
       window._firebase_onValue(referenciaDinamica, snap => {
           const dadosFirebase = snap.val() || {};
-          let blocoAtual = blocos[idxBloco];
-          let idPlaying = null;
-          if (blocoAtual) {
-              if (blocoAtual.tipo === 'youtube' && blocoAtual._firebaseIndex !== undefined) {
-                  idPlaying = 'fb_' + blocoAtual._firebaseIndex;
-              } else {
-                  idPlaying = 'local_' + idxBloco;
-              }
-          }
           
-          // Separa rigorosamente os blocos criados localmente pelo usuário e GUARDA seus arquivos intactos
+          let blocoAtivoAtual = blocos[idxBloco];
+          let firebaseIndexRodando = (blocoAtivoAtual && blocoAtivoAtual._firebaseIndex !== undefined) ? blocoAtivoAtual._firebaseIndex : null;
+
           let blocosLocaisPreservados = blocos.filter(b => b.tipo !== 'youtube' && b._firebaseIndex === undefined);
           let novosBlocosAgendados = [];
 
@@ -517,12 +510,9 @@
                   linksArr = [d.fb];
               }
 
-              const blocoAntigoLinks = blocoAntigo ? JSON.stringify(blocoAntigo.fbLinksArray || []) : "";
-              const blocoNovoLinks = JSON.stringify(linksArr);
-              const ytMudou = blocoAntigo && (blocoAntigo.ytlink !== (d.yt || ''));
-              const m3uMudou = blocoAntigo && (blocoAntigo.m3ulink !== (d.m3u || ''));
-              const linksMudaram = blocoAntigoLinks !== blocoNovoLinks;
-              const estavaRodando = (blocoAntigo && !ytMudou && !m3uMudou && !linksMudaram) ? blocoAntigo._agendadoRodando : false;
+              const estavaRodando = blocoAntigo ? blocoAntigo._agendadoRodando : false;
+              const arquivoAtualPreservado = blocoAntigo ? blocoAntigo.arquivoAtual : 0;
+              const countPreservado = blocoAntigo ? blocoAntigo._count : 0;
 
               let horariosAdminArr = [];
               if (Array.isArray(d.horarios) && d.horarios.length > 0) {
@@ -553,7 +543,7 @@
                   tempo: 0, 
                   sessaoRestante: 0, 
                   pauseRestante: 0, 
-                  arquivoAtual: 0, 
+                  arquivoAtual: arquivoAtualPreservado < listaArquivosFirebase.length ? arquivoAtualPreservado : 0, 
                   limitePorCiclo: 0,
                   ytlink: d.yt || '', 
                   m3ulink: d.m3u || '', 
@@ -564,23 +554,27 @@
                   horariosAdmin: horariosAdminArr,
                   removido: false, 
                   _agendadoRodando: estavaRodando, 
+                  _count: countPreservado,
                   _firebaseIndex: i 
               });
           });
 
-          // BLINDAGEM TOTAL: Atualiza ou insere os dados do Firebase SEM destruir os blocos locais de pasta/nuvem
           let blocosFinais = [...blocosLocaisPreservados];
 
           novosBlocosAgendados.forEach(bFb => {
               const indexExistente = blocosFinais.findIndex(b => b._firebaseIndex === bFb._firebaseIndex);
               if (indexExistente !== -1) {
-                  // Mantém o bloco existente do Firebase atualizando apenas propriedades necessárias
                   blocosFinais[indexExistente].ytlink = bFb.ytlink;
                   blocosFinais[indexExistente].m3ulink = bFb.m3ulink;
                   blocosFinais[indexExistente].horariosAdmin = bFb.horariosAdmin;
                   blocosFinais[indexExistente].horaInicio = bFb.horaInicio;
                   blocosFinais[indexExistente].horaFim = bFb.horaFim;
                   blocosFinais[indexExistente].diaSemana = bFb.diaSemana;
+                  blocosFinais[indexExistente].nome = bFb.nome;
+                  blocosFinais[indexExistente].fbLinksArray = bFb.fbLinksArray;
+                  if (blocosFinais[indexExistente].arquivos.length === 0) {
+                      blocosFinais[indexExistente].arquivos = bFb.arquivos;
+                  }
               } else {
                   blocosFinais.push(bFb);
               }
@@ -588,10 +582,11 @@
 
           blocos = blocosFinais;
           
-          if (idPlaying && idPlaying.startsWith('fb_')) {
-              const fbId = idPlaying.split('_')[1];
-              const novoIndex = blocos.findIndex(b => b._firebaseIndex === fbId);
-              if (novoIndex !== -1) { idxBloco = novoIndex; }
+          if (firebaseIndexRodando !== null) {
+              const novoIndex = blocos.findIndex(b => b._firebaseIndex === firebaseIndexRodando);
+              if (novoIndex !== -1) { 
+                  idxBloco = novoIndex; 
+              }
           }
           
           blocosEl.innerHTML = '';
@@ -840,7 +835,6 @@ let pauseTimer = null;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
-// Estado salvo blindado para arquivos internos e nuvem
 let estadoBlocoInterrompido = {
   idx: -1,
   arquivoAtual: 0,
