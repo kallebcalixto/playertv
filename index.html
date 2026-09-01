@@ -842,8 +842,9 @@ let estadoBlocoInterrompido = {
   fileName: ""
 };
 
-let ytTempoSalvo = 0;
+let ytTempoAcumuladoPorLink = {};
 let ytUltimoPlayTimestamp = 0;
+let ytUrlAtualAtiva = "";
 
 let timerBannerAtivo = null;
 let timerOcultarBanner = null;
@@ -1640,7 +1641,7 @@ window.removerBloco = function(i){
   atualizarGrade();
 }
 
-window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTempoSalvo = 0; ytUltimoPlayTimestamp = 0; tocarAtual(); }
+window.iniciar = function(){ sistemaIniciado = true; idxBloco=0; ytTempoAcumuladoPorLink = {}; ytUltimoPlayTimestamp = 0; ytUrlAtualAtiva = ""; tocarAtual(); }
 window.proximoBloco = function(){ idxBloco=(idxBloco+1)%blocos.length; tocarAtual(); }
 window.pausar = function(){ video.pause(); }
 window.retomar = function(){ video.play(); }
@@ -1650,16 +1651,25 @@ function startYouTubeNow(b) {
     ytplayer.style.display = 'block'; video.style.display = 'none'; 
     const id = b.ytlink.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/))([A-Za-z0-9_-]{11})/); 
     if(id) {
-       let startParam = ytTempoSalvo > 0 ? `&start=${Math.floor(ytTempoSalvo)}` : '';
+       if (ytUrlAtualAtiva && ytUrlAtualAtiva !== b.ytlink && ytUltimoPlayTimestamp > 0) {
+           const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
+           ytTempoAcumuladoPorLink[ytUrlAtualAtiva] = (ytTempoAcumuladoPorLink[ytUrlAtualAtiva] || 0) + Math.floor(decorrido);
+       }
+       
+       ytUrlAtualAtiva = b.ytlink;
+       let tempoSalvo = ytTempoAcumuladoPorLink[b.ytlink] || 0;
+       let startParam = tempoSalvo > 0 ? `&start=${Math.floor(tempoSalvo)}` : '';
+       
        ytplayer.src = `https://www.youtube.com/embed/${id[1]}?autoplay=1${startParam}`;
        ytUltimoPlayTimestamp = Date.now();
     }
 }
 
 function stopYouTube(){ 
-    if (ytUltimoPlayTimestamp > 0) {
+    if (ytUrlAtualAtiva && ytUltimoPlayTimestamp > 0) {
         const decorrido = (Date.now() - ytUltimoPlayTimestamp) / 1000;
-        ytTempoSalvo += Math.floor(decorrido); ytUltimoPlayTimestamp = 0;
+        ytTempoAcumuladoPorLink[ytUrlAtualAtiva] = (ytTempoAcumuladoPorLink[ytUrlAtualAtiva] || 0) + Math.floor(decorrido);
+        ytUltimoPlayTimestamp = 0;
     }
     ytplayer.src=''; ytplayer.style.display='none'; 
 }
