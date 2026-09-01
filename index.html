@@ -819,10 +819,13 @@ let pauseTimer = null;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
-// Variáveis de estado global para salvar perfeitamente de onde parou antes de entrar o Firebase / Timer / YouTube
-let progressoBlocoSalvo = 0;
-let arquivoBlocoSalvo = 0;
-let idxBlocoSalvo = -1;
+// Estado salvo blindado especificamente para o bloco ativo no momento exato da interrupção
+let estadoBlocoInterrompido = {
+  idx: -1,
+  arquivoAtual: 0,
+  currentTime: 0
+};
+
 let ytTempoSalvo = 0;
 let ytUltimoPlayTimestamp = 0;
 
@@ -1396,11 +1399,13 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
+        // SE O BLOCO ATIVO FOR DE FILMES / DROPBOX / INTERNO, SALVA ESTRICTAMENTE O SEU ESTADO ATUAL
         if (blocoAtivo && blocoAtivo.tipo !== 'youtube') {
-          // SALVA RIGOROSAMENTE O ESTADO ATUAL DO BLOCO ANTERIOR (Dropbox, Interno ou M3U) ANTES DO FIREBASE/TIMER ENTRAR
-          progressoBlocoSalvo = video.currentTime || 0;
-          arquivoBlocoSalvo = blocoAtivo.arquivoAtual || 0;
-          idxBlocoSalvo = idxBloco;
+          estadoBlocoInterrompido = {
+            idx: idxBloco,
+            arquivoAtual: blocoAtivo.arquivoAtual || 0,
+            currentTime: video.currentTime || 0
+          };
         }
       }
       
@@ -1408,21 +1413,21 @@ function verificarAgendados() {
       b._agendadoRodando = true; idxBloco = indiceParaRodar; sistemaIniciado = true; tocarAtual();
     }
   } else {
-    // Quando o Firebase ou Timer acaba, retorna EXATAMENTE no arquivo e segundo em que estava o bloco anterior
+    // Quando o Firebase/Timer acaba, retorna EXATAMENTE no bloco, arquivo e segundo salvos
     const agendadoQueEstavaRodando = blocos.find(b => b._agendadoRodando);
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
       
-      if (idxBlocoSalvo !== -1 && blocos[idxBlocoSalvo] && !blocos[idxBlocoSalvo].removido) {
-        idxBloco = idxBlocoSalvo;
+      if (estadoBlocoInterrompido.idx !== -1 && blocos[estadoBlocoInterrompido.idx] && !blocos[estadoBlocoInterrompido.idx].removido) {
+        idxBloco = estadoBlocoInterrompido.idx;
         const bTarget = blocos[idxBloco];
         
-        bTarget.arquivoAtual = arquivoBlocoSalvo || 0;
+        bTarget.arquivoAtual = estadoBlocoInterrompido.arquivoAtual;
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
 
         setTimeout(() => {
-           video.currentTime = progressoBlocoSalvo || 0;
+           video.currentTime = estadoBlocoInterrompido.currentTime;
            video.play().catch(()=>{});
         }, 300);
 
@@ -1687,7 +1692,7 @@ window.pularTempoVideo = function(event) {
 window.salvarProgramacao = function(){ 
   const posicoes = {};
   document.querySelectorAll('.movel').forEach(el => {
-    if(id = el.id) { 
+    if(el.id) { 
       posicoes[el.id] = { 
         top: el.style.top, 
         left: el.style.left, 
