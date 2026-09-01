@@ -499,7 +499,9 @@
                   idPlaying = 'local_' + idxBloco;
               }
           }
-          let blocosManter = blocos.filter(b => b.tipo !== 'youtube' && b._firebaseIndex === undefined);
+          
+          // Preserva rigorosamente os blocos locais já criados (com seus arquivos e blobs na memória)
+          let blocosLocaisPreservados = blocos.filter(b => b.tipo !== 'youtube' && b._firebaseIndex === undefined);
           let novosBlocosAgendados = [];
 
           Object.keys(dadosFirebase).forEach(i => {
@@ -565,7 +567,9 @@
                   _firebaseIndex: i 
               });
           });
-          blocos = [...blocosManter, ...novosBlocosAgendados];
+
+          // Reconstrói a lista combinando os blocos locais intactos com os do Firebase
+          blocos = [...blocosLocaisPreservados, ...novosBlocosAgendados];
           
           if (idPlaying && idPlaying.startsWith('fb_')) {
               const fbId = idPlaying.split('_')[1];
