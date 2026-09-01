@@ -819,7 +819,7 @@ let pauseTimer = null;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
-// Estado salvo blindado especificamente para arquivos locais e nuvem
+// Estado salvo blindado para arquivos internos e nuvem
 let estadoBlocoInterrompido = {
   idx: -1,
   arquivoAtual: 0,
@@ -1356,7 +1356,6 @@ function verificarAgendados() {
   const horaAtual = `${h}:${m}:${s}`;
   let blocoEncontrado = false; let indiceParaRodar = -1;
 
-  // 1. Verifica se há Bloco de Tempo Fixo (Comercial) programado para este horário e dia exatos
   for (let i = 0; i < blocos.length; i++) {
     const b = blocos[i]; if (!b || b.removido) continue;
     if (b.tipo === 'timer' && b.horarios && b.horarios.length > 0) {
@@ -1366,7 +1365,6 @@ function verificarAgendados() {
     }
   }
 
-  // 2. Se não tem Tempo Fixo, verifica se há Programação Extra (YouTube / M3U / Firebase) ativa para este dia e horário
   if (!blocoEncontrado) {
     for (let i = 0; i < blocos.length; i++) {
       const b = blocos[i]; if (!b || b.removido) continue;
@@ -1400,7 +1398,6 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
-        // SALVA COM PRECISÃO O ESTADO DO ARQUIVO (LOCAL OU NUVEM) ANTES DO FIREBASE ENTRAR
         if (blocoAtivo && blocoAtivo.tipo !== 'youtube') {
           let arquivoObj = blocoAtivo.arquivos[blocoAtivo.arquivoAtual];
           let nomeDoArquivo = arquivoObj && arquivoObj.file ? arquivoObj.file.name : "";
@@ -1417,7 +1414,6 @@ function verificarAgendados() {
       b._agendadoRodando = true; idxBloco = indiceParaRodar; sistemaIniciado = true; tocarAtual();
     }
   } else {
-    // Quando o Firebase/Timer acaba, retorna EXATAMENTE no arquivo local/nuvem e segundo salvos
     const agendadoQueEstavaRodando = blocos.find(b => b._agendadoRodando);
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
@@ -1426,7 +1422,6 @@ function verificarAgendados() {
         idxBloco = estadoBlocoInterrompido.idx;
         const bTarget = blocos[idxBloco];
         
-        // Garante encontrar o índice exato do arquivo pelo nome se a lista foi recarregada
         if (estadoBlocoInterrompido.fileName && bTarget.arquivos) {
           const indexEncontrado = bTarget.arquivos.findIndex(a => a.file && a.file.name === estadoBlocoInterrompido.fileName);
           if (indexEncontrado !== -1) {
