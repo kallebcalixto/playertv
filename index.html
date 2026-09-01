@@ -500,7 +500,7 @@
               }
           }
           
-          // Separa rigorosamente os blocos criados localmente pelo usuário
+          // Separa rigorosamente os blocos criados localmente pelo usuário e GUARDA seus arquivos intactos
           let blocosLocaisPreservados = blocos.filter(b => b.tipo !== 'youtube' && b._firebaseIndex === undefined);
           let novosBlocosAgendados = [];
 
@@ -568,8 +568,25 @@
               });
           });
 
-          // Reconstrói a lista unindo perfeitamente os blocos locais (com seus arquivos intactos) e os do Firebase
-          blocos = [...blocosLocaisPreservados, ...novosBlocosAgendados];
+          // BLINDAGEM TOTAL: Atualiza ou insere os dados do Firebase SEM destruir os blocos locais de pasta/nuvem
+          let blocosFinais = [...blocosLocaisPreservados];
+
+          novosBlocosAgendados.forEach(bFb => {
+              const indexExistente = blocosFinais.findIndex(b => b._firebaseIndex === bFb._firebaseIndex);
+              if (indexExistente !== -1) {
+                  // Mantém o bloco existente do Firebase atualizando apenas propriedades necessárias
+                  blocosFinais[indexExistente].ytlink = bFb.ytlink;
+                  blocosFinais[indexExistente].m3ulink = bFb.m3ulink;
+                  blocosFinais[indexExistente].horariosAdmin = bFb.horariosAdmin;
+                  blocosFinais[indexExistente].horaInicio = bFb.horaInicio;
+                  blocosFinais[indexExistente].horaFim = bFb.horaFim;
+                  blocosFinais[indexExistente].diaSemana = bFb.diaSemana;
+              } else {
+                  blocosFinais.push(bFb);
+              }
+          });
+
+          blocos = blocosFinais;
           
           if (idPlaying && idPlaying.startsWith('fb_')) {
               const fbId = idPlaying.split('_')[1];
@@ -1305,7 +1322,7 @@ function renderizarBloco(i, bloco){
   }
 
   card.innerHTML = `
-    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':blocos[i].tipo==='movie'?'Filmes':blocos[i].tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
+    <h3 id="titulo-bloco-${i}">Bloco ${i+1}${nomeDisplay} <span class="badge">${bloco.tipo==='timer'?'Tempo Fixo':bloco.tipo==='movie'?'Filmes':bloco.tipo==='pause'?'Pausa':'YouTube / M3U'}</span></h3>
     <div class="row"><label>Nome:</label><input type="text" placeholder="Ex: Jaspion" value="${bloco.nome || ''}" onchange="definirNomeBloco(${i}, this.value)" style="width:145px; background:#222; color:#fff; border:1px solid #444; border-radius:4px; padding:4px 6px;"></div>
     <div class="row">
         ${(isTimer||isMovie) ? `
