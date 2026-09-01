@@ -819,11 +819,12 @@ let pauseTimer = null;
 let hlsInstance = null;
 let sistemaIniciado = false;
 
-// Estado salvo blindado especificamente para o bloco ativo no momento exato da interrupção
+// Estado salvo blindado especificamente para arquivos locais e nuvem
 let estadoBlocoInterrompido = {
   idx: -1,
   arquivoAtual: 0,
-  currentTime: 0
+  currentTime: 0,
+  fileName: ""
 };
 
 let ytTempoSalvo = 0;
@@ -1399,12 +1400,15 @@ function verificarAgendados() {
       sistemaIniciado = true;
       if (sistemaIniciado && idxBloco !== indiceParaRodar && !blocos[idxBloco]._agendadoRodando) {
         const blocoAtivo = blocos[idxBloco];
-        // SE O BLOCO ATIVO FOR DE FILMES / DROPBOX / INTERNO, SALVA ESTRICTAMENTE O SEU ESTADO ATUAL
+        // SALVA COM PRECISÃO O ESTADO DO ARQUIVO (LOCAL OU NUVEM) ANTES DO FIREBASE ENTRAR
         if (blocoAtivo && blocoAtivo.tipo !== 'youtube') {
+          let arquivoObj = blocoAtivo.arquivos[blocoAtivo.arquivoAtual];
+          let nomeDoArquivo = arquivoObj && arquivoObj.file ? arquivoObj.file.name : "";
           estadoBlocoInterrompido = {
             idx: idxBloco,
             arquivoAtual: blocoAtivo.arquivoAtual || 0,
-            currentTime: video.currentTime || 0
+            currentTime: video.currentTime || 0,
+            fileName: nomeDoArquivo
           };
         }
       }
@@ -1413,7 +1417,7 @@ function verificarAgendados() {
       b._agendadoRodando = true; idxBloco = indiceParaRodar; sistemaIniciado = true; tocarAtual();
     }
   } else {
-    // Quando o Firebase/Timer acaba, retorna EXATAMENTE no bloco, arquivo e segundo salvos
+    // Quando o Firebase/Timer acaba, retorna EXATAMENTE no arquivo local/nuvem e segundo salvos
     const agendadoQueEstavaRodando = blocos.find(b => b._agendadoRodando);
     if (agendadoQueEstavaRodando) {
       agendadoQueEstavaRodando._agendadoRodando = false;
@@ -1422,12 +1426,23 @@ function verificarAgendados() {
         idxBloco = estadoBlocoInterrompido.idx;
         const bTarget = blocos[idxBloco];
         
-        bTarget.arquivoAtual = estadoBlocoInterrompido.arquivoAtual;
+        // Garante encontrar o índice exato do arquivo pelo nome se a lista foi recarregada
+        if (estadoBlocoInterrompido.fileName && bTarget.arquivos) {
+          const indexEncontrado = bTarget.arquivos.findIndex(a => a.file && a.file.name === estadoBlocoInterrompido.fileName);
+          if (indexEncontrado !== -1) {
+            bTarget.arquivoAtual = indexEncontrado;
+          } else {
+            bTarget.arquivoAtual = estadoBlocoInterrompido.arquivoAtual || 0;
+          }
+        } else {
+          bTarget.arquivoAtual = estadoBlocoInterrompido.arquivoAtual || 0;
+        }
+
         video.style.opacity = '0'; video.style.backgroundColor = '#000000';
         tocarAtual();
 
         setTimeout(() => {
-           video.currentTime = estadoBlocoInterrompido.currentTime;
+           video.currentTime = estadoBlocoInterrompido.currentTime || 0;
            video.play().catch(()=>{});
         }, 300);
 
