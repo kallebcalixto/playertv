@@ -853,6 +853,10 @@ let timerOcultarBanner = null;
 let timerAseguirAtivo = null;
 let timerOcultarAseguir = null;
 
+// Sistema anti-travamento de nuvem
+let ultimoTempoVerificado = 0;
+let tempoTravadoStall = 0;
+
 window.onYouTubeIframeAPIReady = function() {
     ytPlayerAPI = new YT.Player('ytplayer', {
         height: '280',
@@ -1595,6 +1599,17 @@ function attachHandlersFor(b){
   video.onseeked = () => { video.style.opacity = '1'; };
   video.onplaying = () => { if (video.currentTime > 0) { video.style.opacity = '1'; } };
 
+  // Anti-travamento de nuvem: evento de erro de rede no vídeo
+  video.onerror = () => {
+      console.warn("Erro de rede detectado na nuvem. Tentando reconectar o arquivo...");
+      setTimeout(() => {
+          let tempoAtual = video.currentTime;
+          video.load();
+          video.currentTime = tempoAtual;
+          video.play().catch(() => {});
+      }, 2000);
+  };
+
   video.onended = () => {
     b.arquivoAtual = (b.arquivoAtual + 1) % b.arquivos.length;
     if (b.tipo === 'movie') { 
@@ -1744,7 +1759,7 @@ window.pularTempoVideo = function(event) {
 window.salvarProgramacao = function(){ 
   const posicoes = {};
   document.querySelectorAll('.movel').forEach(el => {
-    if(id = el.id) { 
+    if(el.id) { 
       posicoes[el.id] = { 
         top: el.style.top, 
         left: el.style.left, 
@@ -1980,6 +1995,28 @@ setInterval(() => {
     }
     
     _ultimoBlocoAtivo = idxBloco;
+}, 1000);
+
+// Verificador Anti-Stalling (Trava de Internet/Buffer)
+setInterval(() => {
+    if (!sistemaIniciado || video.paused || video.ended) return;
+    const b = blocos[idxBloco];
+    if (!b || b.tipo === 'youtube' || b.tipo === 'pause') return;
+
+    if (video.currentTime === ultimoTempoVerificado) {
+        tempoTravadoStall++;
+        // Se travou no mesmo segundo por mais de 3 segundos seguidos, força um empurrãozinho no buffer
+        if (tempoTravadoStall >= 3) {
+            console.warn("Detectado travamento de buffer na nuvem. Recuperando...");
+            let t = video.currentTime;
+            video.currentTime = t + 0.1;
+            video.play().catch(()=>{});
+            tempoTravadoStall = 0;
+        }
+    } else {
+        ultimoTempoVerificado = video.currentTime;
+        tempoTravadoStall = 0;
+    }
 }, 1000);
 
 setInterval(() => {
