@@ -698,16 +698,7 @@
         </div>
 
         <div id="movel-controles-direito" class="movel redimensionavel" style="left: 550px; top: 100px; width: 340px;">
-          <div style="background:#1a1a1a; padding:15px; border-radius:10px; border:1px solid #333; width: 100%; box-sizing: border-box;">
-              <label style="font-size:11px; color:#2e7d32; font-weight:bold;">URL DO BRIDGE (NODE.JS):</label>
-              <input type="text" id="bridgeUrl" value="ws://localhost:8080" style="width:100%; background:#000; border:1px solid #444; color:#fff; padding:8px; margin:5px 0; border-radius:5px; box-sizing: border-box;">
-              <div style="display:flex; gap:10px; align-items:center;">
-                  <button id="btnStream" onclick="toggleStream()" style="background:#b71c1c; flex:1; font-weight:bold;">🔴 INICIAR TRANSMISSÃO</button>
-                  <div id="statusLed" style="width:12px; height:12px; background:#444; border-radius:50%;"></div>
-              </div>
-          </div>
-
-          <div style="margin-top:15px; display: flex; flex-direction: column; gap: 5px; width: 100%; box-sizing: border-box;">
+          <div style="margin-top:0px; display: flex; flex-direction: column; gap: 5px; width: 100%; box-sizing: border-box;">
             <button class="btn-sec" onclick="adicionarBloco('timer')">+ Bloco (Tempo Fixo)</button>
             <button class="btn-sec" onclick="adicionarBloco('movie')">+ Bloco (Filmes)</button>
             <button class="btn-sec" onclick="adicionarBloco('pause')">+ Bloco (Pausa)</button>
@@ -853,7 +844,6 @@ let timerOcultarBanner = null;
 let timerAseguirAtivo = null;
 let timerOcultarAseguir = null;
 
-// Sistema anti-travamento de nuvem
 let ultimoTempoVerificado = 0;
 let tempoTravadoStall = 0;
 
@@ -1599,7 +1589,6 @@ function attachHandlersFor(b){
   video.onseeked = () => { video.style.opacity = '1'; };
   video.onplaying = () => { if (video.currentTime > 0) { video.style.opacity = '1'; } };
 
-  // Anti-travamento de nuvem: evento de erro de rede no vídeo
   video.onerror = () => {
       console.warn("Erro de rede detectado na nuvem. Tentando reconectar o arquivo...");
       setTimeout(() => {
@@ -1857,29 +1846,6 @@ function renderizarListaHorarios(i) {
     `).join('');
 }
 
-let mediaRecorder; let socket;
-
-window.toggleStream = async function() {
-    const btn = document.getElementById('btnStream'); const led = document.getElementById('statusLed'); const url = document.getElementById('bridgeUrl').value; const playerEl = document.getElementById('player');
-    if (!mediaRecorder || mediaRecorder.state === "inactive") {
-        try {
-            const stream = await navigator.mediaDevices.getDisplayMedia({ video: { displaySurface: "browser", frameRate: 20 }, audio: true, preferCurrentTab: true });
-            if (!!window.CropTarget) { const target = await CropTarget.fromElement(playerEl); const [videoTrack] = stream.getVideoTracks(); await videoTrack.cropTo(target); }
-            socket = new WebSocket(url);
-            socket.onopen = () => {
-                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp8,opus', videoBitsPerSecond: 450000 });
-                mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0 && socket.readyState === WebSocket.OPEN) { socket.send(e.data); } };
-                mediaRecorder.start(100); 
-                btn.innerText = "⏹ PARAR TRANSMISSÃO"; btn.style.background = "#2e7d32"; led.style.background = "#00ff00";
-            };
-            socket.onclose = () => resetStreamUI(btn, led);
-            socket.onerror = () => { alert("Erro de conexão."); resetStreamUI(btn, led); };
-            stream.getVideoTracks()[0].onended = () => { if(mediaRecorder) mediaRecorder.stop(); if(socket) socket.close(); resetStreamUI(btn, led); };
-        } catch (err) { console.error(err); alert("Erro: Certifique-se de escolher 'Separador do Chrome' e a aba deste player."); }
-    } else { mediaRecorder.stop(); if(socket) socket.close(); resetStreamUI(btn, led); }
-};
-function resetStreamUI(btn, led) { btn.innerText = "🔴 INICIAR TRANSMISSÃO"; btn.style.background = "#b71c1c"; led.style.background = "#444"; }
-
 let layoutTravado = true;
 const btnTrava = document.createElement('button'); btnTrava.id = 'btn-trava-layout'; btnTrava.innerHTML = '🔒 Layout Travado'; btnTrava.className = 'layout-travado'; document.body.appendChild(btnTrava);
 
@@ -1997,7 +1963,6 @@ setInterval(() => {
     _ultimoBlocoAtivo = idxBloco;
 }, 1000);
 
-// Verificador Anti-Stalling (Trava de Internet/Buffer)
 setInterval(() => {
     if (!sistemaIniciado || video.paused || video.ended) return;
     const b = blocos[idxBloco];
@@ -2005,7 +1970,6 @@ setInterval(() => {
 
     if (video.currentTime === ultimoTempoVerificado) {
         tempoTravadoStall++;
-        // Se travou no mesmo segundo por mais de 3 segundos seguidos, força um empurrãozinho no buffer
         if (tempoTravadoStall >= 3) {
             console.warn("Detectado travamento de buffer na nuvem. Recuperando...");
             let t = video.currentTime;
